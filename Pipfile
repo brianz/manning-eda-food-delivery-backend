@@ -8,6 +8,7 @@ flask-restful = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 psycopg2 = "*"
+marshmallow = "*"
 
 [dev-packages]
 yapf = "*"
