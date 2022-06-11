@@ -1,6 +1,6 @@
 from pprint import pprint as pp
 
-from domain import model
+from foodie2ue.domain import model
 
 
 def test_foo():

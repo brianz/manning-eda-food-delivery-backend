@@ -8,6 +8,6 @@
     "python.formatting.provider": "yapf",
     "python.linting.flake8Enabled": true,
     "python.testing.pytestEnabled": false,
-    "python.analysis.extraPaths": ["${workspaceFolder}/src"]
+    "python.analysis.extraPaths": ["${workspaceFolder}/src/foodie2ue"]
   }
 }

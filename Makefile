@@ -19,10 +19,10 @@ server :
 .PHONY: server
 
 migration :
-	flask db migrate
+	alembic revision --autogenerate
 .PHONY: migration
 
 apply-migration :
-	flask db upgrade
+	alembic upgrade head
 .PHONY: apply-migration
 

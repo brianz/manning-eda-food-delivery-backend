@@ -20,6 +20,17 @@ menuitems = Table(
     Column("price", Numeric(precision=4, scale=2), nullable=False),
 )
 
+menuitems_addon = Table(
+    "menuitem_addons",
+    mapper_registry.metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("created", DateTime, nullable=False, server_default=text('NOW()')),
+    Column("updated", DateTime, nullable=False, server_default=text('NOW()'), onupdate=utcnow),
+    Column("name", String(64), unique=True),
+    Column("description", String(256)),
+    Column("price", Numeric(precision=4, scale=2), nullable=False),
+)
+
 
 def start_mappers():
     mapper_registry.map_imperatively(MenuItemSchema, menuitems)
