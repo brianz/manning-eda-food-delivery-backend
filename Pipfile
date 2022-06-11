@@ -5,10 +5,9 @@ name = "pypi"
 
 [packages]
 flask-restful = "*"
-flask-sqlalchemy = "*"
-flask-migrate = "*"
 psycopg2 = "*"
 marshmallow = "*"
+alembic = "*"
 
 [dev-packages]
 yapf = "*"
