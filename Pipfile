@@ -13,6 +13,9 @@ marshmallow = "*"
 [dev-packages]
 yapf = "*"
 flake8 = "*"
+pytest = "*"
+pytest-watch = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.9"

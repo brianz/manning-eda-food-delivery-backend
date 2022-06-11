@@ -1,1 +1,1 @@
-from app import app
+from src import app    # noqa: W292, F401
