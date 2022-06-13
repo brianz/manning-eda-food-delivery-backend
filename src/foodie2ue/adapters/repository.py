@@ -1,4 +1,5 @@
 import abc
+from typing import List
 
 from ..domain import model
 
@@ -9,9 +10,9 @@ class AbstractRepository(abc.ABC):
     def create_menu_item(self, menu_item: model.MenuItem):
         raise NotImplementedError
 
-    # @abc.abstractmethod
-    # def get(self, reference) -> models.Batch:
-    #     raise NotImplementedError
+    @abc.abstractmethod
+    def fetch_menu_items(self) -> List[model.MenuItem]:
+        raise NotImplementedError
 
 
 class SqlAlchemyRepository(AbstractRepository):
@@ -20,16 +21,7 @@ class SqlAlchemyRepository(AbstractRepository):
         self.session = session
 
     def create_menu_item(self, menu_item: model.MenuItem):
-        return super().create_menu_item(menu_item)
+        self.session.add(menu_item)
 
-
-# class SqlAlchemyMenuRepository(AbstractRepository):
-
-#     def (self, batch):
-#         self.session.add(batch)
-
-# def get(self, reference):
-#     return self.session.query(models.Menu).filter_by(reference=reference).one()
-
-# def list(self):
-#     return self.session.query(models.Menu).all()
+    def fetch_menu_items(self) -> List[model.MenuItem]:
+        return self.session.query(model.MenuItem).all()

@@ -10,18 +10,15 @@ services:
       - .:/code
     ports:
       - "5150:5000" # flask dev server
-    environment:
-      - FLASK_APP=/code/src/main.py
-      - DATABASE_URL=postgresql+psycopg2://postgres:foobar@psql/eda
-      - PYTHONPATH=/code/src/foodie2ue
+    env_file:
+      - envs/dev.env
     command: flask run -h 0.0.0.0 -p 5000
     depends_on:
       - psql
 
   psql:
     image: postgres:12-alpine
-    environment:
-      - POSTGRES_PASSWORD=foobar
-      - POSTGRES_DB=eda
+    env_file:
+      - envs/dev.env
     ports:
       - "8001:5432"

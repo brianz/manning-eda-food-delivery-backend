@@ -1,0 +1,3 @@
+import os
+
+POSTGRES_DATABASE_URI = os.environ['FLASK_SQLALCHEMY_DATABASE_URI']

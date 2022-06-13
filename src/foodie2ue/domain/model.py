@@ -1,4 +1,4 @@
-from marshmallow import Schema, ValidationError, fields
+from marshmallow import Schema, ValidationError, fields, post_load
 
 from ..utils import utcnow
 
@@ -9,6 +9,22 @@ def must_not_be_blank(data):
         raise ValidationError("Data not provided.")
 
 
+class MenuItem:
+
+    def __init__(self, **kwargs):
+        print(kwargs)
+        self.id = kwargs.get('id')
+        self.created = kwargs.get('created')
+        self.updated = kwargs.get('updated')
+        self.name = kwargs['name']
+        self.description = kwargs['description']
+        self.size = kwargs.get('size')
+        self.price = kwargs['price']
+
+    def __repr__(self):
+        return f"<MenuItem {self.name}>"
+
+
 class MenuItemSchema(Schema):
     id = fields.Int(dump_only=True)
     created = fields.DateTime(dump_default=utcnow)
@@ -17,6 +33,26 @@ class MenuItemSchema(Schema):
     description = fields.Str()
     size = fields.Str()
     price = fields.Number(as_string=True)
+
+    @post_load
+    def make_item(self, data, **kwargs):
+        return MenuItem(**data)
+
+
+class AddOnSchema(Schema):
+    name = fields.Str()
+    description = fields.Str()
+    size = fields.Str()
+    price = fields.Number(as_string=True)
+
+
+class AddOn:
+
+    def __init__(self, addon_schema: AddOnSchema) -> None:
+        self.name = addon_schema['name']
+        self.description = addon_schema['description']
+        self.size = addon_schema['size']
+        self.price = addon_schema['price']
 
     # class Meta:
     #     unknown = marshmallow.EXCLUDE
@@ -52,27 +88,11 @@ class MenuItemSchema(Schema):
     #     return sum(line.qty for line in self._allocations)
 
 
-# class QuoteSchema(Schema):
-#     id = fields.Int(dump_only=True)
-#     author = fields.Nested(AuthorSchema, validate=must_not_be_blank)
-#     content = fields.Str(required=True, validate=must_not_be_blank)
-#     posted_at = fields.DateTime(dump_only=True)
+# MenuItem: MenuItemSchema = MenuItemSchema()
+# MenuItems: MenuItemSchema = MenuItemSchema(many=True)
 
-#     # Allow client to pass author's full name in request body
-#     # e.g. {"author': 'Tim Peters"} rather than {"first": "Tim", "last": "Peters"}
-#     @pre_load
-#     def process_author(self, data, **kwargs):
-#         author_name = data.get("author")
-#         if author_name:
-#             first, last = author_name.split(" ")
-#             author_dict = dict(first=first, last=last)
-#         else:
-#             author_dict = {}
-#         data["author"] = author_dict
-#         return data
-
-MenuItem: MenuItemSchema = MenuItemSchema()
-MenuItems: MenuItemSchema = MenuItemSchema(many=True)
+# AddOn: AddOnSchema = AddOnSchema()
+# AddOns: AddOnSchema = AddOnSchema(many=True)
 
 # quote_schema = QuoteSchema()
 # quotes_schema = QuoteSchema(many=True, only=("id", "content"))

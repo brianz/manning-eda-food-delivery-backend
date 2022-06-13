@@ -1,12 +1,24 @@
-from sqlalchemy import (Column, DateTime, ForeignKey, Integer, Numeric, String, Table, text)
-from sqlalchemy.orm import registry, relationship
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Table,
+    create_engine,
+    text,
+)
+from sqlalchemy.orm import registry, relationship, sessionmaker
 
-from .domain.model import MenuItem, MenuItemSchema
+from .config import POSTGRES_DATABASE_URI
+from .domain.model import AddOn, MenuItem
 from .utils import utcnow
 
-mapper_registry = registry()
+get_session = sessionmaker(bind=create_engine(POSTGRES_DATABASE_URI))
 
-# metadata = MetaData()
+mapper_registry = registry()
 
 menuitems = Table(
     "menuitems",
@@ -18,10 +30,11 @@ menuitems = Table(
     Column("description", String(256)),
     Column("size", String(32)),
     Column("price", Numeric(precision=4, scale=2), nullable=False),
-)
+    Index('unique_name_and_size', 'name', 'size', unique=True))
 
-menuitems_addon = Table(
-    "menuitem_addons",
+# add on items for menu items
+addons = Table(
+    "addons",
     mapper_registry.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("created", DateTime, nullable=False, server_default=text('NOW()')),
@@ -29,13 +42,16 @@ menuitems_addon = Table(
     Column("name", String(64), unique=True),
     Column("description", String(256)),
     Column("price", Numeric(precision=4, scale=2), nullable=False),
+    Column('menuitem_id', Integer, ForeignKey('menuitems.id')),
 )
 
 
 def start_mappers():
-    mapper_registry.map_imperatively(MenuItemSchema, menuitems)
-
-    # mapper_registry.map_imperatively(
-    #     User,
-    #     user,
-    #     properties={'addons': relationship(MenuAddOn, backref='menuitem', order_by=menuitem.c.id)})
+    mapper_registry.map_imperatively(
+        MenuItem,
+        menuitems,
+        properties={
+            'addons': relationship(AddOn, backref='menuitem', order_by=addons.c.id),
+        },
+    )
+    mapper_registry.map_imperatively(AddOn, addons)
