@@ -1,11 +1,11 @@
-from pprint import pp
-
 from flask import request
 from flask_restful import Api, Resource
 
-from .domain import model
-from .service_layer.menu import create_new_menu_item, list_menu_items
-from .service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from ..domain import model
+from ..service_layer.menu import create_new_menu_item, list_menu_items
+from ..service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+# from marshmallow import ValidationError
 
 
 class MenuItemsList(Resource):
@@ -20,7 +20,6 @@ class MenuItemsList(Resource):
 
         menu_item_schema = model.MenuItemSchema()
         menu_item: model.MenuItem = menu_item_schema.load(request.json)
-        # pp(menu_item)
 
         create_new_menu_item(menu_item=menu_item, uow=SqlAlchemyUnitOfWork())
 
@@ -28,7 +27,7 @@ class MenuItemsList(Resource):
 
 
 def connect_routes():
-    from .flask_api import app
+    from ..api import app
     api = Api(app)
 
     api.add_resource(MenuItemsList, '/menu')

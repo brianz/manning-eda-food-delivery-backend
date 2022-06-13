@@ -3,7 +3,7 @@ import abc
 
 from ..adapters import repository
 
-from ..orm import get_session
+from ..adapters.orm import get_session
 
 
 class AbstractUnitOfWork(abc.ABC):

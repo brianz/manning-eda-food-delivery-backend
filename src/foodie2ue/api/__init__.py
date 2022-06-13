@@ -1,7 +1,7 @@
 from flask import Flask
 from .routes import connect_routes
 
-from . import orm
+from ..adapters import orm
 
 orm.start_mappers()
 

@@ -12,9 +12,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import registry, relationship, sessionmaker
 
-from .config import POSTGRES_DATABASE_URI
-from .domain.model import AddOn, MenuItem
-from .utils import utcnow
+from ..config import POSTGRES_DATABASE_URI
+from ..domain.model import AddOn, MenuItem
+from ..utils import utcnow
 
 get_session = sessionmaker(bind=create_engine(POSTGRES_DATABASE_URI))
 
