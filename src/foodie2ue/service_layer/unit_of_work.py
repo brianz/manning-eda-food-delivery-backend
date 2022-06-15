@@ -1,9 +1,20 @@
 # pylint: disable=attribute-defined-outside-init
 import abc
 
+from sqlalchemy.exc import IntegrityError
+from psycopg2.errors import UniqueViolation
+
 from ..adapters import repository
 
 from ..adapters.orm import get_session
+
+
+class UOWException(Exception):
+    pass
+
+
+class UOWDuplicateException(Exception):
+    pass
 
 
 class AbstractUnitOfWork(abc.ABC):
@@ -43,7 +54,10 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.session.close()
 
     def commit(self):
-        self.session.commit()
+        try:
+            return self.session.commit()
+        except IntegrityError as error:
+            raise UOWDuplicateException(error)
 
     def rollback(self):
         self.session.rollback()

@@ -1,7 +1,8 @@
 import os
 from logging.config import fileConfig
 
-from adapters.orm import mapper_registry
+from foodie2ue.adapters.orm import mapper_registry
+
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context

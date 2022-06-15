@@ -13,13 +13,14 @@ from sqlalchemy import (
 from sqlalchemy.orm import registry, relationship, sessionmaker
 
 from ..config import POSTGRES_DATABASE_URI
-from ..domain.model import AddOn, MenuItem
+from ..domain.model import AddOn, MenuItem, Driver
 from ..utils import utcnow
 
 get_session = sessionmaker(bind=create_engine(POSTGRES_DATABASE_URI))
 
 mapper_registry = registry()
 
+# Menu items: burgers, cheeseburgers, fries, etc.
 menuitems = Table(
     "menuitems",
     mapper_registry.metadata,
@@ -30,7 +31,8 @@ menuitems = Table(
     Column("description", String(256)),
     Column("size", String(32)),
     Column("price", Numeric(precision=4, scale=2), nullable=False),
-    Index('unique_name_and_size', 'name', 'size', unique=True))
+    Index('unique_name_and_size', 'name', 'size', unique=True),
+)
 
 # add on items for menu items
 addons = Table(
@@ -45,6 +47,17 @@ addons = Table(
     Column('menuitem_id', Integer, ForeignKey('menuitems.id')),
 )
 
+drivers = Table(
+    "drivers",
+    mapper_registry.metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("created", DateTime, nullable=False, server_default=text('NOW()')),
+    Column("updated", DateTime, nullable=False, server_default=text('NOW()'), onupdate=utcnow),
+    Column("first_name", String(64), nullable=False),
+    Column("last_name", String(64), nullable=False),
+    Column("phone_number", String(16), unique=True, nullable=False),
+)
+
 
 def start_mappers():
     mapper_registry.map_imperatively(
@@ -55,3 +68,5 @@ def start_mappers():
         },
     )
     mapper_registry.map_imperatively(AddOn, addons)
+
+    mapper_registry.map_imperatively(Driver, drivers)

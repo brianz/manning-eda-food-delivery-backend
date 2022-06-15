@@ -3,6 +3,10 @@ from marshmallow import Schema, ValidationError, fields, post_load
 from ..utils import utcnow
 
 
+class InvalidItemException(Exception):
+    pass
+
+
 # Custom validator
 def must_not_be_blank(data):
     if not data:
@@ -25,6 +29,28 @@ class MenuItem:
         return f"<MenuItem {self.name}>"
 
 
+class AddOn:
+
+    def __init__(self, **kwargs):
+        self.name = kwargs['name']
+        self.description = kwargs.get('description', '')
+        self.size = kwargs.get('size', '')
+        self.price = kwargs['price']
+        self.menuitem_id = kwargs['menuitem_id']
+
+
+class AddOnSchema(Schema):
+    name = fields.Str()
+    description = fields.Str()
+    size = fields.Str()
+    price = fields.Number(as_string=True)
+    menuitem_id = fields.Int()
+
+    @post_load
+    def make_item(self, data, **kwargs):
+        return AddOn(**data)
+
+
 class MenuItemSchema(Schema):
     id = fields.Int(dump_only=True)
     created = fields.DateTime(dump_default=utcnow)
@@ -33,26 +59,31 @@ class MenuItemSchema(Schema):
     description = fields.Str()
     size = fields.Str()
     price = fields.Number(as_string=True)
+    addons = fields.List(fields.Nested(AddOnSchema))
 
     @post_load
     def make_item(self, data, **kwargs):
         return MenuItem(**data)
 
 
-class AddOnSchema(Schema):
-    name = fields.Str()
-    description = fields.Str()
-    size = fields.Str()
-    price = fields.Number(as_string=True)
+class Driver:
+
+    def __init__(self, **kwargs):
+        self.first_name = kwargs['first_name']
+        self.last_name = kwargs['last_name']
+        self.phone_number = kwargs['phone_number']
 
 
-class AddOn:
+class BaseSchema(Schema):
+    id = fields.Int(dump_only=True)
+    created = fields.DateTime(dump_default=utcnow)
+    updated = fields.DateTime(dump_default=utcnow, dump_only=True)
 
-    def __init__(self, addon_schema: AddOnSchema) -> None:
-        self.name = addon_schema['name']
-        self.description = addon_schema['description']
-        self.size = addon_schema['size']
-        self.price = addon_schema['price']
+
+class DriverSchema(BaseSchema):
+    first_name = fields.Str()
+    last_name = fields.Str()
+    phone_number = fields.Str()
 
     # class Meta:
     #     unknown = marshmallow.EXCLUDE
