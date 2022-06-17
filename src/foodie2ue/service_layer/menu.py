@@ -1,4 +1,3 @@
-from ast import Add
 from typing import List
 from .unit_of_work import AbstractUnitOfWork, UOWDuplicateException
 from ..domain.model import AddOn, MenuItem
@@ -12,11 +11,11 @@ def get_addon(item_id: int, uow: AbstractUnitOfWork) -> AddOn:
     return uow.repo.fetch_addon(item_id=item_id)
 
 
-def list_addons(uow: AbstractUnitOfWork) -> List[AddOn]:
+def list_addons(menu_item: MenuItem, uow: AbstractUnitOfWork) -> List[AddOn]:
     return uow.repo.fetch_addons()
 
 
-def create_new_addon(addon: AddOn, uow: AbstractUnitOfWork) -> AddOn:
+def create_new_addon(menu_item: MenuItem, addon: AddOn, uow: AbstractUnitOfWork) -> AddOn:
     uow.repo.create_addon(addon)
 
     try:

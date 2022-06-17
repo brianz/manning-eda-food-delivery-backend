@@ -1,3 +1,4 @@
+from operator import mod
 import sched
 from flask import request
 from flask_restful import Api, Resource, abort
@@ -41,14 +42,22 @@ class MenuItemsList(BaseAPIResource):
 
 
 class AddOnList(BaseAPIResource):
+    """Resource which manages add ons for a single menu item."""
 
-    def get(self):
+    @staticmethod
+    def _get_item(item_id: int, uow: AbstractUnitOfWork) -> model.MenuItem:
+        item = menu_service.get_menu_item(item_id, uow=uow)
+        if not item:
+            abort(404, message=f"Menu item {item_id} doesn't exist")
+        return item
+
+    def get(self, item_id: int):
         with self.UOWClass() as uow:
-            items = menu_service.list_addons(uow)
+            item: model.MenuItem = self._get_item(item_id, uow)
             schema = model.AddOnSchema(many=True)
-            return schema.dump(items), 200
+            return schema.dump(item.addons), 200
 
-    def post(self):
+    def post(self, item_id: int):
         with self.UOWClass() as uow:
             schema = model.AddOnSchema()
             addon: model.AddOnSchema = schema.load(request.json)
@@ -62,7 +71,7 @@ class AddOnList(BaseAPIResource):
 
 class MenuItemResource(BaseAPIResource):
 
-    def get(self, item_id):
+    def get(self, item_id: int):
         with self.UOWClass() as uow:
             item = menu_service.get_menu_item(item_id, uow=uow)
             if not item:
@@ -101,5 +110,4 @@ def connect_routes():
 
     api.add_resource(MenuItemsList, '/menuitems')
     api.add_resource(MenuItemResource, '/menuitems/<item_id>')
-
-    api.add_resource(AddOnList, '/addons')
+    api.add_resource(AddOnList, '/menuitems/<item_id>/addons')

@@ -1,3 +1,4 @@
+from typing import List
 from marshmallow import Schema, ValidationError, fields, post_load
 
 from ..utils import utcnow
@@ -16,7 +17,6 @@ def must_not_be_blank(data):
 class MenuItem:
 
     def __init__(self, **kwargs):
-        print(kwargs)
         self.id = kwargs.get('id')
         self.created = kwargs.get('created')
         self.updated = kwargs.get('updated')
@@ -24,6 +24,7 @@ class MenuItem:
         self.description = kwargs['description']
         self.size = kwargs.get('size')
         self.price = kwargs['price']
+        self.addons: List[AddOn] = kwargs.get('addons', [])
 
     def __repr__(self):
         return f"<MenuItem {self.name}>"
