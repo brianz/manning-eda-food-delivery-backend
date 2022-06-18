@@ -12,11 +12,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import registry, relationship, sessionmaker
 
-from ..config import POSTGRES_DATABASE_URI
+from ..config import POSTGRES_DATABASE_URI, POSTGRES_CONNECTION_KWARGS
 from ..domain.model import AddOn, MenuItem, Driver
 from ..utils import utcnow
 
-get_session = sessionmaker(bind=create_engine(POSTGRES_DATABASE_URI))
+get_session = sessionmaker(bind=create_engine(POSTGRES_DATABASE_URI, **POSTGRES_CONNECTION_KWARGS))
 
 mapper_registry = registry()
 
@@ -44,7 +44,13 @@ addons = Table(
     Column("name", String(64), unique=True),
     Column("description", String(256)),
     Column("price", Numeric(precision=4, scale=2), nullable=False),
-    Column('menuitem_id', Integer, ForeignKey('menuitems.id')),
+)
+
+menuitem_addons = Table(
+    "menuitem_addons",
+    mapper_registry.metadata,
+    Column("menuitem_id", ForeignKey("menuitems.id"), primary_key=True),
+    Column("addon_id", ForeignKey("addons.id"), primary_key=True),
 )
 
 drivers = Table(
@@ -64,7 +70,12 @@ def start_mappers():
         MenuItem,
         menuitems,
         properties={
-            'addons': relationship(AddOn, backref='menuitem', order_by=addons.c.id),
+            'addons': relationship(
+                AddOn,
+                backref='menuitem',
+                order_by=addons.c.id,
+                secondary="menuitem_addons",
+            ),
         },
     )
     mapper_registry.map_imperatively(AddOn, addons)

@@ -1,5 +1,6 @@
 # pylint: disable=attribute-defined-outside-init
 import abc
+from typing import Optional
 
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation
@@ -18,7 +19,9 @@ class UOWDuplicateException(Exception):
 
 
 class AbstractUnitOfWork(abc.ABC):
-    repo: repository.AbstractRepository
+
+    def __init__(self) -> None:
+        self.repo: Optional[repository.AbstractRepository] = None
 
     def __enter__(self):
         return self
@@ -34,10 +37,15 @@ class AbstractUnitOfWork(abc.ABC):
     def rollback(self):
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def refresh(self, instance, **kwargs):
+        raise NotImplementedError
+
 
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def __init__(self, close_on_exit=True):
+        self.repo: Optional[repository.SqlAlchemyRepository] = None
         self.__close_on_exit = close_on_exit
 
     def __enter__(self):
@@ -61,3 +69,6 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def rollback(self):
         self.session.rollback()
+
+    def refresh(self, instance, **kwargs):
+        self.session.refresh(instance, **kwargs)

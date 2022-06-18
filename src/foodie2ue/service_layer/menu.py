@@ -15,13 +15,13 @@ def list_addons(menu_item: MenuItem, uow: AbstractUnitOfWork) -> List[AddOn]:
     return uow.repo.fetch_addons()
 
 
-def create_new_addon(menu_item: MenuItem, addon: AddOn, uow: AbstractUnitOfWork) -> AddOn:
-    uow.repo.create_addon(addon)
+def create_new_addon(addon: AddOn, uow: AbstractUnitOfWork) -> AddOn:
+    return uow.repo.fetch_or_create_addon(addon)
 
-    try:
-        return (uow.commit(), None)
-    except UOWDuplicateException as error:
-        return (None, str(error))
+
+def add_addon_to_menu_item(item: MenuItem, addon: AddOn, uow: AbstractUnitOfWork) -> MenuItem:
+    uow.repo.add_addon_to_menu_item(item, addon)
+    return item
 
 
 def get_menu_item(item_id: int, uow: AbstractUnitOfWork) -> MenuItem:

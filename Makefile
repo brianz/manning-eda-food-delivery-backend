@@ -22,7 +22,7 @@ migration :
 	alembic revision --autogenerate
 .PHONY: migration
 
-apply-migration :
+migrate :
 	alembic upgrade head
-.PHONY: apply-migration
+.PHONY: migrate
 

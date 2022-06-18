@@ -1,0 +1,125 @@
+{
+	"info": {
+		"_postman_id": "75ee60cc-8fe7-4ed0-8970-fba8ab87718f",
+		"name": "Manning Food",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "720740"
+	},
+	"item": [
+		{
+			"name": "Menu Items",
+			"item": [
+				{
+					"name": "Create menu item",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Double Cheeseburger\",\n    \"description\": \"Two 1/2 patties with cheddar cheese\",\n    \"price\": \"12 .99\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/menuitems",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"menuitems"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List menu items",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/menuitems",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"menuitems"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get menu item",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/menuitems/1",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"menuitems",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create AddOn",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Extra patty\",\n    \"description\": \"Add an extra slice of beef\",\n    \"menuitem_id\": 1,\n    \"price\": 2.99\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{HOST}}/addons",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"addons"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List AddOns",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{HOST}}/menuitems/1/addons",
+							"host": [
+								"{{HOST}}"
+							],
+							"path": [
+								"menuitems",
+								"1",
+								"addons"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Drivers",
+			"item": []
+		}
+	]
+}

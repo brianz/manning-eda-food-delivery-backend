@@ -27,44 +27,28 @@ class MenuItem:
         self.addons: List[AddOn] = kwargs.get('addons', [])
 
     def __repr__(self):
-        return f"<MenuItem {self.name}>"
+        return f"<MenuItem {self.id} - {self.name}>"
 
 
 class AddOn:
 
     def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
         self.name = kwargs['name']
         self.description = kwargs.get('description', '')
         self.size = kwargs.get('size', '')
         self.price = kwargs['price']
+        # self.menuitem_id = kwargs['menuitem_id']
+
+    def __repr__(self):
+        return f"<AddOn {self.id} - {self.name}>"
+
+
+class MenuItemAddOn:
+
+    def __init__(self, **kwargs):
         self.menuitem_id = kwargs['menuitem_id']
-
-
-class AddOnSchema(Schema):
-    name = fields.Str()
-    description = fields.Str()
-    size = fields.Str()
-    price = fields.Number(as_string=True)
-    menuitem_id = fields.Int()
-
-    @post_load
-    def make_item(self, data, **kwargs):
-        return AddOn(**data)
-
-
-class MenuItemSchema(Schema):
-    id = fields.Int(dump_only=True)
-    created = fields.DateTime(dump_default=utcnow)
-    updated = fields.DateTime(dump_default=utcnow, dump_only=True)
-    name = fields.Str()
-    description = fields.Str()
-    size = fields.Str()
-    price = fields.Number(as_string=True)
-    addons = fields.List(fields.Nested(AddOnSchema))
-
-    @post_load
-    def make_item(self, data, **kwargs):
-        return MenuItem(**data)
+        self.addon_id = kwargs['addon_id']
 
 
 class Driver:
@@ -75,10 +59,36 @@ class Driver:
         self.phone_number = kwargs['phone_number']
 
 
+## Schemas
+
+
 class BaseSchema(Schema):
     id = fields.Int(dump_only=True)
     created = fields.DateTime(dump_default=utcnow)
     updated = fields.DateTime(dump_default=utcnow, dump_only=True)
+
+
+class AddOnSchema(Schema):
+    name = fields.Str()
+    description = fields.Str()
+    size = fields.Str()
+    price = fields.Number(as_string=True)
+
+    @post_load
+    def make_item(self, data, **kwargs):
+        return AddOn(**data)
+
+
+class MenuItemSchema(BaseSchema):
+    name = fields.Str()
+    description = fields.Str()
+    size = fields.Str()
+    price = fields.Number(as_string=True)
+    addons = fields.List(fields.Nested(AddOnSchema))
+
+    @post_load
+    def make_item(self, data, **kwargs):
+        return MenuItem(**data)
 
 
 class DriverSchema(BaseSchema):
@@ -118,13 +128,3 @@ class DriverSchema(BaseSchema):
     # @property
     # def allocated_quantity(self) -> int:
     #     return sum(line.qty for line in self._allocations)
-
-
-# MenuItem: MenuItemSchema = MenuItemSchema()
-# MenuItems: MenuItemSchema = MenuItemSchema(many=True)
-
-# AddOn: AddOnSchema = AddOnSchema()
-# AddOns: AddOnSchema = AddOnSchema(many=True)
-
-# quote_schema = QuoteSchema()
-# quotes_schema = QuoteSchema(many=True, only=("id", "content"))
