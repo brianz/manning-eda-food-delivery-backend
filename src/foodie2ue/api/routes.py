@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, json, make_response
 from flask_restful import Api, Resource, abort
 
 from ..domain import model
@@ -28,12 +28,12 @@ class MenuItemsList(BaseAPIResource):
                 uow=uow,
             )
             if error:
-                return {'error': error}, 403
+                return {'message': str(error), 'details': error.details}, 403
 
             return schema.dump(new_menu_item), 201
 
 
-class AddOnList(BaseAPIResource):
+class MenuItemAddOnList(BaseAPIResource):
     """Resource which manages add ons for a single menu item."""
 
     def __init__(self) -> None:
@@ -45,7 +45,7 @@ class AddOnList(BaseAPIResource):
     def _get_item(item_id: int, uow: AbstractUnitOfWork) -> model.MenuItem:
         item = menu_service.get_menu_item(item_id, uow=uow)
         if not item:
-            abort(404, message=f"Menu item {item_id} doesn't exist")
+            abort(404, message=f"AddOn item {item_id} doesn't exist", details={})
         return item
 
     def get(self, item_id: int):
@@ -74,28 +74,65 @@ class MenuItemResource(BaseAPIResource):
         with self.UOWClass() as uow:
             item = menu_service.get_menu_item(item_id, uow=uow)
             if not item:
-                abort(404, message=f"Menu item {item_id} doesn't exist")
+                abort(404, message=f"Menu item {item_id} doesn't exist", details={})
 
             schema = model.MenuItemSchema()
             return schema.dump(item), 200
 
 
+class AddOnList(BaseAPIResource):
+
+    def __init__(self) -> None:
+        self.__plural_schema = model.AddOnSchema(many=True)
+
+    def get(self):
+        """List all of the addons"""
+        with self.UOWClass() as uow:
+            addons = menu_service.list_addons(uow)
+            return self.__plural_schema.dump(addons), 200
+
+
 class AddOnResource(BaseAPIResource):
 
-    def get(self, item_id):
-        with self.UOWClass() as uow:
-            item = menu_service.get_addon(item_id, uow=uow)
-            if not item:
-                abort(404, message=f"Addon {item_id} doesn't exist")
+    def __init__(self) -> None:
+        self.__schema = model.AddOnSchema()
 
-            schema = model.AddOnSchema()
-            return schema.dump(item), 200
+    @staticmethod
+    def _get_item(item_id: int, uow) -> model.AddOn:
+        item = menu_service.get_addon(item_id, uow=uow)
+        if not item:
+            abort(404, message=f"AddOn {item_id} doesn't exist", details={})
+        return item
+
+    def get(self, item_id: int):
+        with self.UOWClass() as uow:
+            item = self._get_item(item_id, uow)
+            return self.__schema.dump(item), 200
+
+    def put(self, item_id):
+        with self.UOWClass() as uow:
+            item = self._get_item(item_id, uow)
+
+            item, error = menu_service.update_addon(item, request.json, uow=uow)
+            if error:
+                return {'message': str(error), 'details': error.details}, 403
+
+            return self.__schema.dump(item), 201
 
 
 def connect_routes():
     from ..api import app
     api = Api(app)
 
+    @api.representation('application/json')
+    def output_json(data, code, headers=None):
+        resp = make_response(json.dumps(data), code)
+        resp.headers.extend(headers or {})
+        return resp
+
     api.add_resource(MenuItemsList, '/menuitems')
     api.add_resource(MenuItemResource, '/menuitems/<item_id>')
-    api.add_resource(AddOnList, '/menuitems/<item_id>/addons')
+    api.add_resource(MenuItemAddOnList, '/menuitems/<item_id>/addons')
+
+    api.add_resource(AddOnList, '/addons')
+    api.add_resource(AddOnResource, '/addons/<item_id>')

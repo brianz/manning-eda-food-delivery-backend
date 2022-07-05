@@ -3,19 +3,10 @@ import abc
 from typing import Optional
 
 from sqlalchemy.exc import IntegrityError
-from psycopg2.errors import UniqueViolation
 
 from ..adapters import repository
-
 from ..adapters.orm import get_session
-
-
-class UOWException(Exception):
-    pass
-
-
-class UOWDuplicateException(Exception):
-    pass
+from ..exceptions import UOWDuplicateException
 
 
 class AbstractUnitOfWork(abc.ABC):

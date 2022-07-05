@@ -1,17 +1,30 @@
-from typing import List
-from .unit_of_work import AbstractUnitOfWork, UOWDuplicateException
+from typing import List, Optional, Tuple
+
+from .unit_of_work import AbstractUnitOfWork
 from ..domain.model import AddOn, MenuItem
-
-
-class InvalidMenuItem(Exception):
-    pass
+from ..exceptions import UOWDuplicateException, Foodie2ueException
 
 
 def get_addon(item_id: int, uow: AbstractUnitOfWork) -> AddOn:
     return uow.repo.fetch_addon(item_id=item_id)
 
 
-def list_addons(menu_item: MenuItem, uow: AbstractUnitOfWork) -> List[AddOn]:
+def update_addon(add_on: AddOn, data: dict,
+                 uow: AbstractUnitOfWork) -> Tuple[Optional[AddOn], Optional[Foodie2ueException]]:
+    # This is needed b/c trying to run an update when the name is the same results in a duplicate
+    # key exception
+    if data.get('name') == add_on.name:
+        data.pop('name')
+
+    try:
+        uow.repo.update_addon(add_on, data=data)
+        return add_on, None
+    except UOWDuplicateException as error:
+        return (None, error)
+
+
+def list_addons(uow: AbstractUnitOfWork) -> List[AddOn]:
+    """Return all AddOns"""
     return uow.repo.fetch_addons()
 
 
@@ -32,10 +45,12 @@ def list_menu_items(uow: AbstractUnitOfWork) -> List[MenuItem]:
     return uow.repo.fetch_menu_items()
 
 
-def create_new_menu_item(menu_item: MenuItem, uow: AbstractUnitOfWork) -> MenuItem:
-    uow.repo.create_menu_item(menu_item)
+def create_new_menu_item(
+        menu_item: MenuItem,
+        uow: AbstractUnitOfWork) -> Tuple[Optional[MenuItem], Optional[Foodie2ueException]]:
 
     try:
-        return (uow.commit(), None)
+        uow.repo.create_menu_item(menu_item)
+        return menu_item, None
     except UOWDuplicateException as error:
-        return (None, str(error))
+        return (None, error)

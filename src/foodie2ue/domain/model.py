@@ -38,7 +38,6 @@ class AddOn:
         self.description = kwargs.get('description', '')
         self.size = kwargs.get('size', '')
         self.price = kwargs['price']
-        # self.menuitem_id = kwargs['menuitem_id']
 
     def __repr__(self):
         return f"<AddOn {self.id} - {self.name}>"
@@ -69,6 +68,7 @@ class BaseSchema(Schema):
 
 
 class AddOnSchema(Schema):
+    id = fields.Int(dump_only=True)
     name = fields.Str()
     description = fields.Str()
     size = fields.Str()
