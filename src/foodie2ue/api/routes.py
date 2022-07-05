@@ -70,14 +70,30 @@ class MenuItemAddOnList(BaseAPIResource):
 
 class MenuItemResource(BaseAPIResource):
 
+    def __init__(self) -> None:
+        self.__schema = model.MenuItemSchema()
+
+    @staticmethod
+    def _get_item(item_id: int, uow) -> model.AddOn:
+        item = menu_service.get_menu_item(item_id, uow=uow)
+        if not item:
+            abort(404, message=f"Menu item {item_id} doesn't exist", details={})
+        return item
+
     def get(self, item_id: int):
         with self.UOWClass() as uow:
-            item = menu_service.get_menu_item(item_id, uow=uow)
-            if not item:
-                abort(404, message=f"Menu item {item_id} doesn't exist", details={})
+            item = self._get_item(item_id, uow=uow)
+            return self.__schema.dump(item), 200
 
-            schema = model.MenuItemSchema()
-            return schema.dump(item), 200
+    def put(self, item_id):
+        with self.UOWClass() as uow:
+            item = self._get_item(item_id, uow=uow)
+
+            item, error = menu_service.update_menu_item(item, request.json, uow=uow)
+            if error:
+                return {'message': str(error), 'details': error.details}, 403
+
+            return self.__schema.dump(item), 201
 
 
 class AddOnList(BaseAPIResource):

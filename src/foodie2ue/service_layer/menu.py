@@ -41,6 +41,19 @@ def get_menu_item(item_id: int, uow: AbstractUnitOfWork) -> MenuItem:
     return uow.repo.fetch_menu_item(item_id=item_id)
 
 
+def update_menu_item(
+        menu_item: MenuItem, data: dict,
+        uow: AbstractUnitOfWork) -> Tuple[Optional[AddOn], Optional[Foodie2ueException]]:
+    if data.get('name') == menu_item.name:
+        data.pop('name')
+
+    try:
+        uow.repo.update_menu_item(menu_item, data=data)
+        return menu_item, None
+    except UOWDuplicateException as error:
+        return (None, error)
+
+
 def list_menu_items(uow: AbstractUnitOfWork) -> List[MenuItem]:
     return uow.repo.fetch_menu_items()
 

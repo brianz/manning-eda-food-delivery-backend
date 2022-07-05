@@ -22,6 +22,10 @@ class AbstractRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def update_addon(self, addon: model.AddOn, data: dict) -> Optional[model.AddOn]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def create_menu_item(self, menu_item: model.MenuItem):
         raise NotImplementedError
 
@@ -31,6 +35,10 @@ class AbstractRepository(abc.ABC):
 
     @abc.abstractmethod
     def fetch_menu_items(self) -> List[model.MenuItem]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def update_menu_item(self, menu_item: model.MenuItem, data: dict) -> Optional[model.MenuItem]:
         raise NotImplementedError
 
 
@@ -90,3 +98,15 @@ class SqlAlchemyRepository(AbstractRepository):
     def fetch_menu_items(self) -> List[model.MenuItem]:
         """Fetch all menu items"""
         return self.session.query(model.MenuItem).all()
+
+    def update_menu_item(self, menu_item: model.MenuItem, data: dict) -> Optional[model.MenuItem]:
+        try:
+            self.session.query(model.MenuItem).filter(model.MenuItem.id == menu_item.id).update(
+                data,
+                synchronize_session="fetch",
+            )
+            self.session.commit()
+            self.session.refresh(menu_item)
+            return menu_item
+        except IntegrityError as error:
+            raise UOWDuplicateException(error)
