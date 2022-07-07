@@ -15,6 +15,13 @@ class Foodie2ueException(Exception):
         return self._details
 
 
+class DoesNotExistException(Foodie2ueException):
+
+    def __init__(self, message: str, details: dict) -> None:
+        self._message = message
+        self._details = details
+
+
 class UOWDuplicateException(Foodie2ueException):
 
     def __init__(self, message) -> None:

@@ -1,4 +1,5 @@
 import abc
+
 from typing import List, Optional
 
 from sqlalchemy.exc import IntegrityError
@@ -21,6 +22,9 @@ class AbstractRepository(abc.ABC):
     def fetch_addons(self) -> List[model.AddOn]:
         raise NotImplementedError
 
+    def fetch_addon_by(self, name: Optional[str]) -> Optional[model.AddOn]:
+        raise NotImplementedError
+
     @abc.abstractmethod
     def update_addon(self, addon: model.AddOn, data: dict) -> Optional[model.AddOn]:
         raise NotImplementedError
@@ -38,7 +42,15 @@ class AbstractRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def fetch_menu_item_by(self, name: Optional[str]) -> Optional[model.MenuItem]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def update_menu_item(self, menu_item: model.MenuItem, data: dict) -> Optional[model.MenuItem]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def create_order(self, order: model.Order) -> Optional[model.Order]:
         raise NotImplementedError
 
 
@@ -47,16 +59,18 @@ class SqlAlchemyRepository(AbstractRepository):
     def __init__(self, session):
         self.session = session
 
+    def __create_and_refesh_model(self, model):
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return model
+
     def fetch_or_create_addon(self, addon: model.AddOn) -> model.AddOn:
         """Create a new AddOn item for a given MenuItem"""
-        _addon = self.session.query(model.AddOn).filter_by(name=addon.name).one_or_none()
+        _addon = self.fetch_addon_by(name=addon.name)
         if _addon:
             return _addon
-
-        self.session.add(addon)
-        self.session.commit()
-        self.session.refresh(addon)
-        return addon
+        return self.__create_and_refesh_model(addon)
 
     def fetch_addon(self, item_id: int) -> Optional[model.AddOn]:
         """Fetch a single AddOn"""
@@ -65,6 +79,12 @@ class SqlAlchemyRepository(AbstractRepository):
     def fetch_addons(self) -> List[model.AddOn]:
         """Fetch all AddOns"""
         return self.session.query(model.AddOn).all()
+
+    def fetch_addon_by(self, name: Optional[str]) -> Optional[model.AddOn]:
+        if name:
+            return self.session.query(model.AddOn).filter_by(name=name).one_or_none()
+
+        return None
 
     def add_addon_to_menu_item(self, item: model.MenuItem, addon: model.AddOn):
         """Add an AddOn item to an existing MenuItem"""
@@ -86,10 +106,7 @@ class SqlAlchemyRepository(AbstractRepository):
 
     def create_menu_item(self, menu_item: model.MenuItem) -> model.MenuItem:
         """Create a new menu item"""
-        self.session.add(menu_item)
-        self.session.commit()
-        self.session.refresh(menu_item)
-        return menu_item
+        return self.__create_and_refesh_model(menu_item)
 
     def fetch_menu_item(self, item_id: int) -> model.MenuItem:
         """Fetch a single menu item by primary key"""
@@ -98,6 +115,12 @@ class SqlAlchemyRepository(AbstractRepository):
     def fetch_menu_items(self) -> List[model.MenuItem]:
         """Fetch all menu items"""
         return self.session.query(model.MenuItem).all()
+
+    def fetch_menu_item_by(self, name: Optional[str]) -> Optional[model.MenuItem]:
+        if name:
+            return self.session.query(model.MenuItem).filter_by(name=name).one_or_none()
+
+        return None
 
     def update_menu_item(self, menu_item: model.MenuItem, data: dict) -> Optional[model.MenuItem]:
         try:
@@ -110,3 +133,6 @@ class SqlAlchemyRepository(AbstractRepository):
             return menu_item
         except IntegrityError as error:
             raise UOWDuplicateException(error)
+
+    def create_order(self, order: model.Order) -> model.Order:
+        return self.__create_and_refesh_model(order)

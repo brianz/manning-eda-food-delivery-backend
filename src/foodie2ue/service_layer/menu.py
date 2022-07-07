@@ -1,8 +1,8 @@
 from typing import List, Optional, Tuple
 
 from .unit_of_work import AbstractUnitOfWork
-from ..domain.model import AddOn, MenuItem
-from ..exceptions import UOWDuplicateException, Foodie2ueException
+from ..domain.model import AddOn, MenuItem, Order
+from ..exceptions import UOWDuplicateException, Foodie2ueException, DoesNotExistException
 
 
 def get_addon(item_id: int, uow: AbstractUnitOfWork) -> AddOn:
@@ -67,3 +67,32 @@ def create_new_menu_item(
         return menu_item, None
     except UOWDuplicateException as error:
         return (None, error)
+
+
+def create_new_order(
+        order: Order,
+        uow: AbstractUnitOfWork) -> Tuple[Optional[Order], Optional[Foodie2ueException]]:
+    """Create a new Order given an `Order` model.
+
+    The `Order` models `MenuItems` as a list of dicts. This makes it simpler to manage in the
+    persistence/DB layer.  The `AddOns` for a `MenuItem` is likewise an array of objects.
+
+    All of those details should not matter at this layer as we are dealing with business logic an
+    the `Order` model.
+    """
+
+    for item in order.items:
+        menu_item: MenuItem = uow.repo.fetch_menu_item_by(name=item['name'])
+        if not menu_item:
+            return (None, DoesNotExistException('Invalid menu item', details=item))
+        order.add_item_to_order(menu_item)
+
+        for addon_item in item.get('addons', []):
+            # TODO - pass in the menu_item to verify the addon is associated
+            addon: AddOn = uow.repo.fetch_addon_by(name=addon_item['name'])
+            if not addon:
+                return (None, DoesNotExistException('Invalid add on item', details=addon_item))
+            order.add_addon_to_order(menu_item)
+
+    uow.repo.create_order(order)
+    return (order, None)

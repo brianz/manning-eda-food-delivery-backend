@@ -136,6 +136,31 @@ class AddOnResource(BaseAPIResource):
             return self.__schema.dump(item), 201
 
 
+class OrdersList(BaseAPIResource):
+
+    def __init__(self) -> None:
+        self.__schema = model.OrderSchema()
+
+    def get(self):
+        with self.UOWClass() as uow:
+            items = menu_service.list_menu_items(uow)
+            schema = model.MenuItemSchema(many=True)
+            return schema.dump(items), 200
+
+    def post(self):
+        with self.UOWClass() as uow:
+            order: model.Order = self.__schema.load(request.json)
+
+            new_order, error = menu_service.create_new_order(
+                order=order,
+                uow=uow,
+            )
+            if error:
+                return {'message': str(error), 'details': error.details}, 403
+
+            return self.__schema.dump(new_order), 201
+
+
 def connect_routes():
     from ..api import app
     api = Api(app)
@@ -152,3 +177,5 @@ def connect_routes():
 
     api.add_resource(AddOnList, '/addons')
     api.add_resource(AddOnResource, '/addons/<item_id>')
+
+    api.add_resource(OrdersList, '/orders')
