@@ -152,6 +152,7 @@ class OrderAddOnSchema(Schema):
 class OrderItemSchema(Schema):
     id = fields.Int()
     name = fields.Str()
+    size = fields.Str()
     addons = fields.List(fields.Nested(OrderAddOnSchema))
 
 

@@ -106,7 +106,10 @@ class SqlAlchemyRepository(AbstractRepository):
 
     def create_menu_item(self, menu_item: model.MenuItem) -> model.MenuItem:
         """Create a new menu item"""
-        return self.__create_and_refesh_model(menu_item)
+        try:
+            return self.__create_and_refesh_model(menu_item)
+        except IntegrityError as error:
+            raise UOWDuplicateException(error)
 
     def fetch_menu_item(self, item_id: int) -> model.MenuItem:
         """Fetch a single menu item by primary key"""
@@ -116,11 +119,19 @@ class SqlAlchemyRepository(AbstractRepository):
         """Fetch all menu items"""
         return self.session.query(model.MenuItem).all()
 
-    def fetch_menu_item_by(self, name: Optional[str]) -> Optional[model.MenuItem]:
-        if name:
-            return self.session.query(model.MenuItem).filter_by(name=name).one_or_none()
+    def fetch_menu_item_by(self,
+                           name: Optional[str] = '',
+                           size: Optional[str] = '') -> Optional[model.MenuItem]:
+        if not (name or size):
+            return None
 
-        return None
+        filters = {}
+        if name:
+            filters['name'] = name
+        if size:
+            filters['size'] = size
+
+        return self.session.query(model.MenuItem).filter_by(**filters).one_or_none()
 
     def update_menu_item(self, menu_item: model.MenuItem, data: dict) -> Optional[model.MenuItem]:
         try:

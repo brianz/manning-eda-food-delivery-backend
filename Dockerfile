@@ -10,4 +10,5 @@ RUN pip install -U \
 ADD . /code
 WORKDIR /code
 
-RUN pipenv install --system
+ARG ENV=production
+RUN make pipenv

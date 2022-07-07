@@ -82,7 +82,7 @@ def create_new_order(
     """
 
     for item in order.items:
-        menu_item: MenuItem = uow.repo.fetch_menu_item_by(name=item['name'])
+        menu_item: MenuItem = uow.repo.fetch_menu_item_by(name=item['name'], size=item.get('size'))
         if not menu_item:
             return (None, DoesNotExistException('Invalid menu item', details=item))
         order.add_item_to_order(menu_item)
