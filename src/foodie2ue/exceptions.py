@@ -28,12 +28,10 @@ class MultipleItemsFoundException(F2UException):
 class DoesNotExistException(F2UException):
     MESSAGE = "The item requested does not exist"
 
-    # def __init__(self, message) -> None:
-    #     self._message = message
-
 
 class DuplicateItemException(F2UException):
     MESSAGE = "An item like this already exists"
 
-    # def __init__(self, message) -> None:
-    #     self._message = "Duplicate item"
+
+class InvalidOrderStateException(F2UException):
+    MESSAGE = "Invalid order state"

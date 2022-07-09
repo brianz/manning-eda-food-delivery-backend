@@ -1,6 +1,7 @@
 from flask import request, json, make_response
 from flask_restful import Api, Resource, abort
 from marshmallow import ValidationError
+from sqlalchemy import func
 
 from ..domain import model
 from ..service_layer import menu as menu_service
@@ -178,10 +179,51 @@ class OrdersList(BaseAPIResource):
         super().__init__()
         self.__schema = model.OrderSchema(many=True)
 
-    def get(self):
+    def get(self, status):
         with self.UOWClass() as uow:
-            items = menu_service.list_orders(uow)
+            if status == 'new':
+                items = menu_service.list_new_orders(uow)
+            elif status == 'ready':
+                items = menu_service.list_ready_for_pickup_orders(uow)
+            else:
+                abort(400, message=f"Invalid status {status}")
+
             return self.__schema.dump(items), 200
+
+
+class OrderResource(BaseAPIResource):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.__schema = model.OrderSchema()
+
+    @staticmethod
+    def _get_item(item_id: int, uow) -> model.AddOn:
+        item = menu_service.get_order(item_id, uow=uow)
+        if not item:
+            abort(404, message=f"Order {item_id} doesn't exist", details={})
+        return item
+
+    def get(self, item_id: int):
+        with self.UOWClass() as uow:
+            item = self._get_item(item_id, uow)
+            return self.__schema.dump(item), 200
+
+    def put(self, item_id):
+        with self.UOWClass() as uow:
+            item = self._get_item(item_id, uow)
+
+            schema = model.UpdateOrderSchema()
+            try:
+                data = schema.load(request.json)
+            except ValidationError as error:
+                abort(400, message="Invalid payload to update order", details=error.messages)
+
+            item, error = menu_service.update_order_status(item, data['status'], uow=uow)
+            if error:
+                return {'message': str(error), 'details': error.details}, 400
+
+            return self.__schema.dump(item), 200
 
 
 def connect_routes():
@@ -202,5 +244,5 @@ def connect_routes():
     api.add_resource(AddOnResource, '/addons/<item_id>')
 
     api.add_resource(OrdersCreate, '/orders')
-    # api.add_resource(OrderResource, '/orders/<item_id>')
-    api.add_resource(OrdersList, '/orders/new')
+    api.add_resource(OrderResource, '/orders/<int:item_id>')
+    api.add_resource(OrdersList, '/orders/<status>')

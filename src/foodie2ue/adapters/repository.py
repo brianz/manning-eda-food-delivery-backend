@@ -3,14 +3,22 @@ import abc
 from typing import List, Optional
 
 from sqlalchemy.exc import (
-    IntegrityError,
+    DataError,
+    IntegrityError,    # InvalidTextRepresentation,
     MultipleResultsFound,
 )
 
+# sqlalchemy.exc.DataError: (psycopg2.errors.InvalidTextRepresentation)
+
+from ..constants import (
+    ORDER_STATUS_NEW,
+    ORDER_STATUS_READY_FOR_PICKUP,
+)
 from ..domain import model
 from ..exceptions import (
     DuplicateItemException,
     MultipleItemsFoundException,
+    InvalidOrderStateException,
 )
 
 
@@ -60,7 +68,15 @@ class AbstractRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def fetch_orders(self) -> List[model.Order]:
+    def fetch_new_orders(self) -> List[model.Order]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def fetch_ready_for_pickup_orders(self) -> List[model.Order]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def fetch_order(self, item_id: int) -> model.Order:
         raise NotImplementedError
 
 
@@ -71,6 +87,9 @@ class SqlAlchemyRepository(AbstractRepository):
 
     def __create_and_refesh_model(self, model):
         self.session.add(model)
+        return self.__refesh_model(model)
+
+    def __refesh_model(self, model):
         self.session.commit()
         self.session.refresh(model)
         return model
@@ -164,5 +183,22 @@ class SqlAlchemyRepository(AbstractRepository):
     def create_order(self, order: model.Order) -> model.Order:
         return self.__create_and_refesh_model(order)
 
-    def fetch_orders(self) -> List[model.Order]:
-        return self.session.query(model.Order).all()
+    def fetch_new_orders(self) -> List[model.Order]:
+        return self.session.query(model.Order).filter(model.Order.status == ORDER_STATUS_NEW).all()
+
+    def fetch_ready_for_pickup_orders(self) -> List[model.Order]:
+        return self.session.query(
+            model.Order).filter(model.Order.status == ORDER_STATUS_READY_FOR_PICKUP).all()
+
+    def fetch_order(self, item_id: int) -> model.Order:
+        return self.session.query(model.Order).get(item_id)
+
+    def update_order_status(self, order: model.Order, status: str) -> Optional[model.Order]:
+        try:
+            self.session.query(model.Order).filter(model.Order.id == order.id).update(
+                {'status': status},
+                synchronize_session="fetch",
+            )
+            return self.__refesh_model(order)
+        except DataError as error:
+            raise InvalidOrderStateException(error)

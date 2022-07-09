@@ -14,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import registry, relationship, sessionmaker
 
+from ..constants import ORDER_STATUSES, ORDER_STATUS_NEW
 from ..config import POSTGRES_DATABASE_URI, POSTGRES_CONNECTION_KWARGS
 from ..domain.model import AddOn, MenuItem, Driver, Order
 from ..utils import utcnow
@@ -65,15 +66,8 @@ orders = Table(
     Column("eta", DateTime),
     Column(
         "status",
-        Enum(
-            'NEW',
-            'PREPARING',
-            'READY_FOR_PICKUP',
-            'ENROUTE',
-            'DELIVERED',
-            name='order_status_enum',
-        ),
-        default='NEW',
+        Enum(*ORDER_STATUSES, name='order_status_enum'),
+        default=ORDER_STATUS_NEW,
     ),
     Column("customer_first_name", String(64), nullable=False),
     Column("customer_last_name", String(64), nullable=False),

@@ -1,13 +1,14 @@
 import dataclasses
 from typing import List, Optional, Tuple
 
-from .unit_of_work import AbstractUnitOfWork
+from ..constants import ORDER_STATUSES
 from ..domain.model import AddOn, MenuItem, Order
 from ..exceptions import (
-    # DoesNotExistException,
-    MultipleItemsFoundException,
     DuplicateItemException,
+    InvalidOrderStateException,
+    MultipleItemsFoundException,
 )
+from .unit_of_work import AbstractUnitOfWork
 
 
 @dataclasses.dataclass()
@@ -122,5 +123,23 @@ def create_new_order(order: Order,
     return (order, None)
 
 
-def list_orders(uow: AbstractUnitOfWork) -> List[Order]:
-    return uow.repo.fetch_orders()
+def list_new_orders(uow: AbstractUnitOfWork) -> List[Order]:
+    return uow.repo.fetch_new_orders()
+
+
+def list_ready_for_pickup_orders(uow: AbstractUnitOfWork) -> List[Order]:
+    return uow.repo.fetch_ready_for_pickup_orders()
+
+
+def get_order(item_id: int, uow: AbstractUnitOfWork) -> Order:
+    return uow.repo.fetch_order(item_id=item_id)
+
+
+def update_order_status(order: Order, status: str,
+                        uow: AbstractUnitOfWork) -> Tuple[Optional[Order], Optional[ServiceError]]:
+    try:
+        uow.repo.update_order_status(order, status=status)
+        return order, None
+    except InvalidOrderStateException:
+        status_err = f"Must be one of: {(', ').join(ORDER_STATUSES)}"
+        return (None, ServiceError('Invalid order state', {"status": [status_err]}))

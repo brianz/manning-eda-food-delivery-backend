@@ -1,8 +1,9 @@
 from decimal import Decimal
 from typing import List, Optional
-from marshmallow import Schema, fields, post_load, validate
-from pkg_resources import require
 
+from marshmallow import Schema, fields, post_load, validate
+
+from ..constants import ORDER_STATUSES
 from ..utils import utcnow
 
 
@@ -156,11 +157,17 @@ class OrderSchema(BaseSchema):
     )
     tax = fields.Number(as_string=True)
     delivery_fee = fields.Number(as_string=True)
+    status = fields.Str()
     subtotal = fields.Number(as_string=True)
+    total = fields.Number(as_string=True, dump_only=True)
 
     @post_load
     def make_item(self, data: dict, **kwargs):
         return Order(**data)
+
+
+class UpdateOrderSchema(Schema):
+    status = fields.Str(required=True, validate=validate.OneOf(ORDER_STATUSES))
 
 
 class DriverSchema(BaseSchema):
