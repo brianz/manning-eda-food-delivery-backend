@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from ..adapters import repository
 from ..adapters.orm import get_session
-from ..exceptions import UOWDuplicateException
+from ..exceptions import DuplicateItemException
 
 
 class AbstractUnitOfWork(abc.ABC):
@@ -56,7 +56,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         try:
             return self.session.commit()
         except IntegrityError as error:
-            raise UOWDuplicateException(error)
+            raise DuplicateItemException(error)
 
     def rollback(self):
         self.session.rollback()

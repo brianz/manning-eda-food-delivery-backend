@@ -1,8 +1,22 @@
+import dataclasses
 from typing import List, Optional, Tuple
 
 from .unit_of_work import AbstractUnitOfWork
 from ..domain.model import AddOn, MenuItem, Order
-from ..exceptions import UOWDuplicateException, Foodie2ueException, DoesNotExistException
+from ..exceptions import (
+    # DoesNotExistException,
+    MultipleItemsFoundException,
+    DuplicateItemException,
+)
+
+
+@dataclasses.dataclass()
+class ServiceError:
+    message: str = 'Error'
+    details: dict = dataclasses.field(default_factory=dict)
+
+    def __str__(self) -> str:
+        return self.message
 
 
 def get_addon(item_id: int, uow: AbstractUnitOfWork) -> AddOn:
@@ -10,7 +24,7 @@ def get_addon(item_id: int, uow: AbstractUnitOfWork) -> AddOn:
 
 
 def update_addon(add_on: AddOn, data: dict,
-                 uow: AbstractUnitOfWork) -> Tuple[Optional[AddOn], Optional[Foodie2ueException]]:
+                 uow: AbstractUnitOfWork) -> Tuple[Optional[AddOn], Optional[ServiceError]]:
     # This is needed b/c trying to run an update when the name is the same results in a duplicate
     # key exception
     if data.get('name') == add_on.name:
@@ -19,8 +33,9 @@ def update_addon(add_on: AddOn, data: dict,
     try:
         uow.repo.update_addon(add_on, data=data)
         return add_on, None
-    except UOWDuplicateException as error:
-        return (None, error)
+    except DuplicateItemException as error:
+        msg = 'There is already an addon with this name'
+        return (None, ServiceError(msg, error.details))
 
 
 def list_addons(uow: AbstractUnitOfWork) -> List[AddOn]:
@@ -41,17 +56,17 @@ def get_menu_item(item_id: int, uow: AbstractUnitOfWork) -> MenuItem:
     return uow.repo.fetch_menu_item(item_id=item_id)
 
 
-def update_menu_item(
-        menu_item: MenuItem, data: dict,
-        uow: AbstractUnitOfWork) -> Tuple[Optional[AddOn], Optional[Foodie2ueException]]:
+def update_menu_item(menu_item: MenuItem, data: dict,
+                     uow: AbstractUnitOfWork) -> Tuple[Optional[AddOn], Optional[ServiceError]]:
     if data.get('name') == menu_item.name:
         data.pop('name')
 
     try:
         uow.repo.update_menu_item(menu_item, data=data)
         return menu_item, None
-    except UOWDuplicateException as error:
-        return (None, error)
+    except DuplicateItemException as error:
+        msg = 'A menu item like this already exists. Make sure the name and size are unique.'
+        return (None, ServiceError(msg, error.details))
 
 
 def list_menu_items(uow: AbstractUnitOfWork) -> List[MenuItem]:
@@ -60,18 +75,18 @@ def list_menu_items(uow: AbstractUnitOfWork) -> List[MenuItem]:
 
 def create_new_menu_item(
         menu_item: MenuItem,
-        uow: AbstractUnitOfWork) -> Tuple[Optional[MenuItem], Optional[Foodie2ueException]]:
+        uow: AbstractUnitOfWork) -> Tuple[Optional[MenuItem], Optional[ServiceError]]:
 
     try:
         uow.repo.create_menu_item(menu_item)
         return menu_item, None
-    except UOWDuplicateException as error:
-        return (None, error)
+    except DuplicateItemException as error:
+        msg = 'A menu item like this already exists. Make sure the name and size are unique.'
+        return (None, ServiceError(msg, error.details))
 
 
-def create_new_order(
-        order: Order,
-        uow: AbstractUnitOfWork) -> Tuple[Optional[Order], Optional[Foodie2ueException]]:
+def create_new_order(order: Order,
+                     uow: AbstractUnitOfWork) -> Tuple[Optional[Order], Optional[ServiceError]]:
     """Create a new Order given an `Order` model.
 
     The `Order` models `MenuItems` as a list of dicts. This makes it simpler to manage in the
@@ -82,17 +97,30 @@ def create_new_order(
     """
 
     for item in order.items:
-        menu_item: MenuItem = uow.repo.fetch_menu_item_by(name=item['name'], size=item.get('size'))
+        try:
+            menu_item: MenuItem = uow.repo.fetch_menu_item_by(name=item['name'],
+                                                              size=item.get('size'))
+        except MultipleItemsFoundException:
+            msg = 'A matching menu item could not be found. Did you forget to specify size?'
+            return (None, ServiceError(msg, details=item))
+
         if not menu_item:
-            return (None, DoesNotExistException('Invalid menu item', details=item))
+            msg = 'A matching menu item could not be found. Did you forget to specify size?'
+            return (None, ServiceError(msg, details=item))
+
         order.add_item_to_order(menu_item)
 
         for addon_item in item.get('addons', []):
             # TODO - pass in the menu_item to verify the addon is associated
             addon: AddOn = uow.repo.fetch_addon_by(name=addon_item['name'])
             if not addon:
-                return (None, DoesNotExistException('Invalid add on item', details=addon_item))
+                msg = 'A matching addon could not be found'
+                return (None, ServiceError(msg, details=addon_item))
             order.add_addon_to_order(menu_item)
 
     uow.repo.create_order(order)
     return (order, None)
+
+
+def list_orders(uow: AbstractUnitOfWork) -> List[Order]:
+    return uow.repo.fetch_orders()

@@ -1,18 +1,9 @@
 from decimal import Decimal
 from typing import List, Optional
-from marshmallow import Schema, ValidationError, fields, post_load
+from marshmallow import Schema, fields, post_load, validate
+from pkg_resources import require
 
 from ..utils import utcnow
-
-
-class InvalidItemException(Exception):
-    pass
-
-
-# Custom validator
-def must_not_be_blank(data):
-    if not data:
-        raise ValidationError("Data not provided.")
 
 
 class MenuItem:
@@ -111,10 +102,10 @@ class BaseSchema(Schema):
 
 class AddOnSchema(Schema):
     id = fields.Int(dump_only=True)
-    name = fields.Str()
+    name = fields.Str(required=True)
     description = fields.Str()
     size = fields.Str()
-    price = fields.Number(as_string=True)
+    price = fields.Number(as_string=True, required=True)
 
     @post_load
     def make_item(self, data, **kwargs):
@@ -122,10 +113,10 @@ class AddOnSchema(Schema):
 
 
 class MenuItemSchema(BaseSchema):
-    name = fields.Str()
+    name = fields.Str(required=True)
     description = fields.Str()
     size = fields.Str()
-    price = fields.Number(as_string=True)
+    price = fields.Number(as_string=True, required=True)
     addons = fields.List(fields.Nested(AddOnSchema))
 
     @post_load
@@ -134,31 +125,35 @@ class MenuItemSchema(BaseSchema):
 
 
 class CustomerSchema(Schema):
-    first_name = fields.Str()
-    last_name = fields.Str()
-    phone_number = fields.Str()
-    email = fields.Str()
-    address = fields.Str()
-    city = fields.Str()
-    state = fields.Str()
-    zip = fields.Str()
+    first_name = fields.Str(required=True)
+    last_name = fields.Str(required=True)
+    phone_number = fields.Str(required=True)
+    email = fields.Email(required=True)
+    address = fields.Str(required=True)
+    city = fields.Str(required=True)
+    state = fields.Str(required=True)
+    zip = fields.Str(required=True)
 
 
 class OrderAddOnSchema(Schema):
     id = fields.Int()
-    name = fields.Str()
+    name = fields.Str(required=True)
 
 
 class OrderItemSchema(Schema):
     id = fields.Int()
-    name = fields.Str()
+    name = fields.Str(required=True)
     size = fields.Str()
     addons = fields.List(fields.Nested(OrderAddOnSchema))
 
 
 class OrderSchema(BaseSchema):
-    customer = fields.Nested(CustomerSchema)
-    items = fields.List(fields.Nested(OrderItemSchema))
+    customer = fields.Nested(CustomerSchema, required=True)
+    items = fields.List(
+        fields.Nested(OrderItemSchema),
+        required=True,
+        validate=validate.Length(min=1, error="Items must be added to an order"),
+    )
     tax = fields.Number(as_string=True)
     delivery_fee = fields.Number(as_string=True)
     subtotal = fields.Number(as_string=True)

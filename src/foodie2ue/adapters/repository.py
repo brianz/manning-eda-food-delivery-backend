@@ -2,10 +2,16 @@ import abc
 
 from typing import List, Optional
 
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import (
+    IntegrityError,
+    MultipleResultsFound,
+)
 
 from ..domain import model
-from ..exceptions import UOWDuplicateException
+from ..exceptions import (
+    DuplicateItemException,
+    MultipleItemsFoundException,
+)
 
 
 class AbstractRepository(abc.ABC):
@@ -51,6 +57,10 @@ class AbstractRepository(abc.ABC):
 
     @abc.abstractmethod
     def create_order(self, order: model.Order) -> Optional[model.Order]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def fetch_orders(self) -> List[model.Order]:
         raise NotImplementedError
 
 
@@ -102,14 +112,14 @@ class SqlAlchemyRepository(AbstractRepository):
             self.session.refresh(addon)
             return addon
         except IntegrityError as error:
-            raise UOWDuplicateException(error)
+            raise DuplicateItemException(error)
 
     def create_menu_item(self, menu_item: model.MenuItem) -> model.MenuItem:
         """Create a new menu item"""
         try:
             return self.__create_and_refesh_model(menu_item)
         except IntegrityError as error:
-            raise UOWDuplicateException(error)
+            raise DuplicateItemException(error)
 
     def fetch_menu_item(self, item_id: int) -> model.MenuItem:
         """Fetch a single menu item by primary key"""
@@ -129,9 +139,15 @@ class SqlAlchemyRepository(AbstractRepository):
         if name:
             filters['name'] = name
         if size:
-            filters['size'] = size
+            filters['size'] = size.lower()
 
-        return self.session.query(model.MenuItem).filter_by(**filters).one_or_none()
+        try:
+            return self.session.query(model.MenuItem).filter_by(**filters).one_or_none()
+        except MultipleResultsFound as error:
+            # For menu items, when there are multiple items with the same name but different sizes,
+            # querying for just the name will result in multiple items being returned. In that case
+            # we'll error out.
+            raise MultipleItemsFoundException(error)
 
     def update_menu_item(self, menu_item: model.MenuItem, data: dict) -> Optional[model.MenuItem]:
         try:
@@ -143,7 +159,10 @@ class SqlAlchemyRepository(AbstractRepository):
             self.session.refresh(menu_item)
             return menu_item
         except IntegrityError as error:
-            raise UOWDuplicateException(error)
+            raise DuplicateItemException(error)
 
     def create_order(self, order: model.Order) -> model.Order:
         return self.__create_and_refesh_model(order)
+
+    def fetch_orders(self) -> List[model.Order]:
+        return self.session.query(model.Order).all()

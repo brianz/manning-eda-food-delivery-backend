@@ -1,8 +1,14 @@
-class Foodie2ueException(Exception):
+class F2UException(Exception):
 
-    def __init__(self, *args: object) -> None:
-        self._message = "Foodie2ue Exception"
-        self._details = {}
+    MESSAGE = "Foodie2ue Exception"
+
+    def __init__(self, error, details=None) -> None:
+        self._message = self.MESSAGE
+        self._details = details or {}
+
+        # some exceptions that we reraise has a params attribute, which we can reuse
+        if hasattr(error, 'params'):
+            self._details = error.params
 
     def __str__(self) -> str:
         return self._message
@@ -15,18 +21,19 @@ class Foodie2ueException(Exception):
         return self._details
 
 
-class DoesNotExistException(Foodie2ueException):
-
-    def __init__(self, message: str, details: dict) -> None:
-        self._message = message
-        self._details = details
+class MultipleItemsFoundException(F2UException):
+    MESSAGE = "Multiple items were found when one or none was required"
 
 
-class UOWDuplicateException(Foodie2ueException):
+class DoesNotExistException(F2UException):
+    MESSAGE = "The item requested does not exist"
 
-    def __init__(self, message) -> None:
-        self._message = "Duplicate item"
+    # def __init__(self, message) -> None:
+    #     self._message = message
 
-        if hasattr(message, 'params'):
-            self._message = "An item like this already exists"
-            self._details = message.params
+
+class DuplicateItemException(F2UException):
+    MESSAGE = "An item like this already exists"
+
+    # def __init__(self, message) -> None:
+    #     self._message = "Duplicate item"
