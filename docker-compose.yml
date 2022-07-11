@@ -12,6 +12,7 @@ services:
       - "5150:5000" # flask dev server
     env_file:
       - envs/dev.env
+      - envs/secret.env
     command: flask run -h 0.0.0.0 -p 5000
     depends_on:
       - psql

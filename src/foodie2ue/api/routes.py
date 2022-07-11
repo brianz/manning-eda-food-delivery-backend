@@ -1,7 +1,6 @@
 from flask import request, json, make_response
 from flask_restful import Api, Resource, abort
 from marshmallow import ValidationError
-from sqlalchemy import func
 
 from ..domain import model
 from ..service_layer import menu as menu_service
@@ -226,8 +225,7 @@ class OrderResource(BaseAPIResource):
             return self.__schema.dump(item), 200
 
 
-def connect_routes():
-    from ..api import app
+def connect_routes(app):
     api = Api(app)
 
     @api.representation('application/json')

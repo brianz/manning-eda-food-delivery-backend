@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 
 from ..constants import ORDER_STATUSES
 from ..domain.model import AddOn, MenuItem, Order
+from ..notifications import send_message
 from ..exceptions import (
     DuplicateItemException,
     InvalidOrderStateException,
@@ -120,6 +121,12 @@ def create_new_order(order: Order,
             order.add_addon_to_order(menu_item)
 
     uow.repo.create_order(order)
+    send_message(
+        recipient=order.customer_email,
+        first_name=order.customer_first_name,
+        order_id=order.id,
+        order_total=order.total,
+    )
     return (order, None)
 
 

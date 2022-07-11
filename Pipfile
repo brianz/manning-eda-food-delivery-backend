@@ -8,6 +8,7 @@ flask-restful = "*"
 psycopg2 = "*"
 marshmallow = "*"
 alembic = "*"
+flask-mail = "*"
 
 [dev-packages]
 yapf = "*"
