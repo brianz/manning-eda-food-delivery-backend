@@ -21,7 +21,7 @@ stop : ## Stop all of the running containers
 	docker-compose stop
 .PHONY: stop
 
-rmdb : ## Delete the database container and start over
+rmdb : stop ## Delete the database container and start over
 	docker-compose rm -f psql
 .PHONY: rmdb
 

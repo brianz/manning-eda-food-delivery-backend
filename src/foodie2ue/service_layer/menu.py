@@ -2,7 +2,7 @@ import dataclasses
 from typing import List, Optional, Tuple
 
 from ..constants import ORDER_STATUSES
-from ..domain.model import AddOn, MenuItem, Order
+from ..domain.model import AddOn, Driver, MenuItem, Order
 from ..notifications import send_message
 from ..exceptions import (
     DuplicateItemException,
@@ -78,7 +78,6 @@ def list_menu_items(uow: AbstractUnitOfWork) -> List[MenuItem]:
 def create_new_menu_item(
         menu_item: MenuItem,
         uow: AbstractUnitOfWork) -> Tuple[Optional[MenuItem], Optional[ServiceError]]:
-
     try:
         uow.repo.create_menu_item(menu_item)
         return menu_item, None
@@ -150,3 +149,16 @@ def update_order_status(order: Order, status: str,
     except InvalidOrderStateException:
         status_err = f"Must be one of: {(', ').join(ORDER_STATUSES)}"
         return (None, ServiceError('Invalid order state', {"status": [status_err]}))
+
+
+def list_drivers(uow: AbstractUnitOfWork) -> List[Driver]:
+    return uow.repo.fetch_drivers()
+
+
+def create_driver(driver: Driver, uow: AbstractUnitOfWork) -> Driver:
+    try:
+        driver = uow.repo.create_driver(driver)
+        return driver, None
+    except DuplicateItemException as error:
+        msg = 'A driver like this already exists. Make sure the phone number is unique.'
+        return (None, ServiceError(msg, error.details))

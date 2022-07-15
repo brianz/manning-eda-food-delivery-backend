@@ -1,9 +1,11 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 
 from marshmallow import Schema, fields, post_load, validate
 
-from ..constants import ORDER_STATUSES
+from .tax_rates import get_tax_rate_by_zip
+from ..constants import DELIVERY_STATUSES, ORDER_STATUSES, DRIVER_STATUSES
 from ..utils import utcnow
 
 
@@ -73,6 +75,8 @@ class Order:
 
     @property
     def total(self) -> float:
+        if not self.tax:
+            self.tax = get_tax_rate_by_zip(self.customer_zip)
         return self.subtotal + self.tax + self.delivery_fee
 
     def add_item_to_order(self, item: MenuItem):
@@ -90,6 +94,18 @@ class Driver:
         self.first_name = kwargs['first_name']
         self.last_name = kwargs['last_name']
         self.phone_number = kwargs['phone_number']
+        self.status = kwargs['status']
+
+
+class DeliveryEvent:
+
+    def __init__(self, **kwargs):
+        self.id: int = kwargs.get('id')
+        self.order_id: int = kwargs['order_id']
+        self.driver_id: int = kwargs['driver_id']
+        self.created: datetime = kwargs.get('created')
+        self.updated: datetime = kwargs.get('updated')
+        self.status: List[str] = kwargs['status']
 
 
 # Schemas
@@ -171,9 +187,26 @@ class UpdateOrderSchema(Schema):
 
 
 class DriverSchema(BaseSchema):
-    first_name = fields.Str()
-    last_name = fields.Str()
-    phone_number = fields.Str()
+    first_name = fields.Str(required=True)
+    last_name = fields.Str(required=True)
+    phone_number = fields.Str(required=True)
+    status = fields.Str(required=True, validate=validate.OneOf(DRIVER_STATUSES))
+
+    @post_load
+    def make_item(self, data, **kwargs):
+        return Driver(**data)
+
+
+class DeliveryEventSchema(BaseSchema):
+    order_id = fields.Int()
+    driver_id = fields.Int()
+    status = fields.Str(required=True, validate=validate.OneOf(DELIVERY_STATUSES))
+
+    # addons = fields.List(fields.Nested(AddOnSchema))
+
+    @post_load
+    def make_item(self, data, **kwargs):
+        return DeliveryEvent(**data)
 
     # class Meta:
     #     unknown = marshmallow.EXCLUDE

@@ -14,9 +14,15 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import registry, relationship, sessionmaker
 
-from ..constants import ORDER_STATUSES, ORDER_STATUS_NEW
+from ..constants import (
+    ORDER_STATUSES,
+    ORDER_STATUS_NEW,
+    DRIVER_STATUSES,
+    DRIVER_STATUS_AVAILABLE,
+    DELIVERY_STATUSES,
+)
 from ..config import POSTGRES_DATABASE_URI, POSTGRES_CONNECTION_KWARGS
-from ..domain.model import AddOn, MenuItem, Driver, Order
+from ..domain.model import AddOn, MenuItem, Driver, Order, DeliveryEvent
 from ..utils import utcnow
 
 get_session = sessionmaker(bind=create_engine(POSTGRES_DATABASE_URI, **POSTGRES_CONNECTION_KWARGS))
@@ -92,6 +98,26 @@ drivers = Table(
     Column("first_name", String(64), nullable=False),
     Column("last_name", String(64), nullable=False),
     Column("phone_number", String(16), unique=True, nullable=False),
+    Column(
+        "status",
+        Enum(*DRIVER_STATUSES, name='driver_status_enum'),
+        default=DRIVER_STATUS_AVAILABLE,
+    ),
+)
+
+delivery_events = Table(
+    "delivery_events",
+    mapper_registry.metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("order_id", ForeignKey("orders.id"), nullable=False),
+    Column("driver_id", ForeignKey("drivers.id"), nullable=False),
+    Column("created", DateTime, nullable=False, server_default=text('NOW()')),
+    Column("updated", DateTime, nullable=False, server_default=text('NOW()'), onupdate=utcnow),
+    Column(
+        "status",
+        Enum(*DELIVERY_STATUSES, name='delivery_status_enum'),
+        nullable=False,
+    ),
 )
 
 
@@ -111,3 +137,19 @@ def start_mappers():
     mapper_registry.map_imperatively(AddOn, addons)
     mapper_registry.map_imperatively(Order, orders)
     mapper_registry.map_imperatively(Driver, drivers)
+    mapper_registry.map_imperatively(
+        DeliveryEvent,
+        delivery_events,
+        properties={
+            'driver': relationship(
+                Driver,
+                backref='delivery_events',
+                order_by=drivers.c.id,
+            ),
+            'order': relationship(
+                Order,
+                backref='delivery_events',
+                order_by=orders.c.id,
+            ),
+        },
+    )

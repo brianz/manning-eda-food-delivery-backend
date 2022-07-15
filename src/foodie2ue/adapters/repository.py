@@ -79,6 +79,14 @@ class AbstractRepository(abc.ABC):
     def fetch_order(self, item_id: int) -> model.Order:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def fetch_drivers(self) -> List[model.Driver]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def create_driver(self, driver: model.Driver) -> Optional[model.Driver]:
+        raise NotImplementedError
+
 
 class SqlAlchemyRepository(AbstractRepository):
 
@@ -202,3 +210,12 @@ class SqlAlchemyRepository(AbstractRepository):
             return self.__refesh_model(order)
         except DataError as error:
             raise InvalidOrderStateException(error)
+
+    def fetch_drivers(self) -> List[model.Driver]:
+        return self.session.query(model.Driver).all()
+
+    def create_driver(self, driver: model.Driver) -> Optional[model.Driver]:
+        try:
+            return self.__create_and_refesh_model(driver)
+        except IntegrityError as error:
+            raise DuplicateItemException(error)

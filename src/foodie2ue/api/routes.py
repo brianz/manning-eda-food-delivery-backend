@@ -225,6 +225,35 @@ class OrderResource(BaseAPIResource):
             return self.__schema.dump(item), 200
 
 
+class DriversListCreate(BaseAPIResource):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.__schema = model.DriverSchema()
+        self.__plural_schema = model.DriverSchema(many=True)
+
+    def get(self):
+        with self.UOWClass() as uow:
+            items = menu_service.list_drivers(uow)
+            return self.__plural_schema.dump(items), 200
+
+    def post(self):
+        with self.UOWClass() as uow:
+            try:
+                driver: model.Driver = self.__schema.load(request.json)
+            except ValidationError as error:
+                abort(400, message="Invalid driver payload", details=error.messages)
+
+            (new_driver, error) = menu_service.create_driver(
+                driver=driver,
+                uow=uow,
+            )
+            if error:
+                return {'message': str(error), 'details': error.details}, 400
+
+            return self.__schema.dump(new_driver), 201
+
+
 def connect_routes(app):
     api = Api(app)
 
@@ -244,3 +273,5 @@ def connect_routes(app):
     api.add_resource(OrdersCreate, '/orders')
     api.add_resource(OrderResource, '/orders/<int:item_id>')
     api.add_resource(OrdersList, '/orders/<status>')
+
+    api.add_resource(DriversListCreate, '/drivers')
