@@ -1,24 +1,15 @@
-import dataclasses
 from typing import List, Optional, Tuple
 
+from . import ServiceError
 from ..constants import ORDER_STATUSES
-from ..domain.model import AddOn, Driver, MenuItem, Order
-from ..notifications import send_message
+from ..domain.model import AddOn, MenuItem, Order
+from ..notifications import notify_customer_of_order
 from ..exceptions import (
     DuplicateItemException,
     InvalidOrderStateException,
     MultipleItemsFoundException,
 )
 from .unit_of_work import AbstractUnitOfWork
-
-
-@dataclasses.dataclass()
-class ServiceError:
-    message: str = 'Error'
-    details: dict = dataclasses.field(default_factory=dict)
-
-    def __str__(self) -> str:
-        return self.message
 
 
 def get_addon(item_id: int, uow: AbstractUnitOfWork) -> AddOn:
@@ -96,18 +87,18 @@ def create_new_order(order: Order,
     All of those details should not matter at this layer as we are dealing with business logic an
     the `Order` model.
     """
+    not_found_msg = 'A matching menu item could not be found. Did you forget to specify size? '
+    not_found_msg += 'Menu items are case sensitive. Did you spell it correctly?'
 
     for item in order.items:
         try:
             menu_item: MenuItem = uow.repo.fetch_menu_item_by(name=item['name'],
                                                               size=item.get('size'))
         except MultipleItemsFoundException:
-            msg = 'A matching menu item could not be found. Did you forget to specify size?'
-            return (None, ServiceError(msg, details=item))
+            return (None, ServiceError(not_found_msg, details=item))
 
         if not menu_item:
-            msg = 'A matching menu item could not be found. Did you forget to specify size?'
-            return (None, ServiceError(msg, details=item))
+            return (None, ServiceError(not_found_msg, details=item))
 
         order.add_item_to_order(menu_item)
 
@@ -119,8 +110,10 @@ def create_new_order(order: Order,
                 return (None, ServiceError(msg, details=addon_item))
             order.add_addon_to_order(menu_item)
 
+    # TODO - this is where we'll put in the notifier class
+
     uow.repo.create_order(order)
-    send_message(
+    notify_customer_of_order(
         recipient=order.customer_email,
         first_name=order.customer_first_name,
         order_id=order.id,
@@ -149,16 +142,3 @@ def update_order_status(order: Order, status: str,
     except InvalidOrderStateException:
         status_err = f"Must be one of: {(', ').join(ORDER_STATUSES)}"
         return (None, ServiceError('Invalid order state', {"status": [status_err]}))
-
-
-def list_drivers(uow: AbstractUnitOfWork) -> List[Driver]:
-    return uow.repo.fetch_drivers()
-
-
-def create_driver(driver: Driver, uow: AbstractUnitOfWork) -> Driver:
-    try:
-        driver = uow.repo.create_driver(driver)
-        return driver, None
-    except DuplicateItemException as error:
-        msg = 'A driver like this already exists. Make sure the phone number is unique.'
-        return (None, ServiceError(msg, error.details))
