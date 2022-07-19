@@ -9,6 +9,7 @@ psycopg2 = "*"
 marshmallow = "*"
 alembic = "*"
 flask-mail = "*"
+boto3 = "*"
 
 [dev-packages]
 yapf = "*"
