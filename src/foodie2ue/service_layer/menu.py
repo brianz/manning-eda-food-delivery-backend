@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 from . import ServiceError
 from ..constants import ORDER_STATUSES
 from ..domain.model import AddOn, MenuItem, Order
-from ..notifications import notify_customer_of_order
+from ..notifications import notify_customer_of_order, notify_drivers_of_new_order
 from ..exceptions import (
     DuplicateItemException,
     InvalidOrderStateException,
@@ -113,12 +113,14 @@ def create_new_order(order: Order,
     # TODO - this is where we'll put in the notifier class
 
     uow.repo.create_order(order)
+
     notify_customer_of_order(
         recipient=order.customer_email,
         first_name=order.customer_first_name,
         order_id=order.id,
         order_total=order.total,
     )
+    notify_drivers_of_new_order(order)
     return (order, None)
 
 

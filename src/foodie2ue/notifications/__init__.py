@@ -1,6 +1,7 @@
+from flask import render_template
 from flask_mail import Mail, Message
 
-from flask import render_template, render_template_string
+from ..domain import model
 
 mail = None
 
@@ -29,3 +30,7 @@ def notify_customer_of_order(recipient, first_name, order_id, order_total) -> No
         body=text_body,
     )
     mail.send(msg)
+
+
+def notify_drivers_of_new_order(order: model.Order) -> None:
+    pass
