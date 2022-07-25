@@ -5,7 +5,7 @@ from typing import List, Optional
 from marshmallow import Schema, fields, post_load, validate
 
 from .tax_rates import get_tax_rate_by_zip
-from ..constants import DELIVERY_STATUSES, ORDER_STATUSES, DRIVER_STATUSES
+from ..constants import DELIVERY_STATUSES, ORDER_STATUSES, DRIVER_STATUSES, ORDER_STATUS_NEW
 from ..utils import utcnow
 
 
@@ -49,9 +49,11 @@ class Order:
 
     def __init__(self, **kwargs) -> None:
         self.id: Optional[int] = kwargs.get('id')
+
         self.created: str = kwargs.get('created')
         self.updated: str = kwargs.get('updated')
         self.items: List[dict] = kwargs['items']
+        self.status: str = kwargs.get('status', ORDER_STATUS_NEW)
 
         _customer = kwargs['customer']
         self.customer_first_name: str = _customer['first_name']
@@ -173,7 +175,6 @@ class OrderSchema(BaseSchema):
     )
     tax = fields.Number(as_string=True)
     delivery_fee = fields.Number(as_string=True)
-    status = fields.Str()
     subtotal = fields.Number(as_string=True)
     total = fields.Number(as_string=True, dump_only=True)
 

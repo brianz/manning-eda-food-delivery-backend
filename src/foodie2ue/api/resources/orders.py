@@ -65,7 +65,7 @@ class OrderResource(BaseAPIResource):
         self.__schema = model.OrderSchema()
 
     @staticmethod
-    def _get_item(item_id: int, uow: AbstractUnitOfWork) -> model.AddOn:
+    def _get_item(item_id: int, uow: AbstractUnitOfWork) -> model.Order:
         item = menu_service.get_order(item_id, uow=uow)
         if not item:
             abort(404, message=f"Order {item_id} doesn't exist", details={})

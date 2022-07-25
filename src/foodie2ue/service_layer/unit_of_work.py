@@ -2,14 +2,19 @@
 import abc
 import os
 
+import boto3
+
+from typing import List
+
 from sqlalchemy.exc import IntegrityError
 
 from . import eventbus
 from ..adapters import repository
 from ..adapters.orm import get_session
+from ..domain import events
 from ..exceptions import DuplicateItemException
 
-EVENTBUS_ARN = os.environ['EVENTBUS_ARN']
+EVENTBRIDGE_ARN = os.environ['EVENTBRIDGE_ARN']
 
 
 def get_eventbridge():
@@ -21,14 +26,14 @@ class AbstractUnitOfWork(abc.ABC):
     messagebus: eventbus.AbstractMessageBus
 
     def __init__(self) -> None:
-        # self.events: List[events.Event] = []
-        self.events = []
+        super().__init__()
+        self._events: List[events.Event] = []
 
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        for event in self.events:
+        for event in self._events:
             self.messagebus.publish_event(
                 event_type=event.__class__.__name__,
                 payload=event.asdict(),
@@ -46,18 +51,26 @@ class AbstractUnitOfWork(abc.ABC):
     def refresh(self, instance, **kwargs):
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def add_event(self, event: events.Event):
+        raise NotImplementedError
+
 
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def __init__(self, close_on_exit=True):
+        super().__init__()
         self.repo: repository.SqlAlchemyRepository = None
+        self.messagebus: eventbus.AbstractMessageBus = None
         self.__close_on_exit = close_on_exit
 
     def __enter__(self):
         self.session = get_session()
-        self.eventbridge = get_eventbridge()
         self.repo = repository.SqlAlchemyRepository(self.session)
-        self.messagebus = eventbus.EventBridge(self.eventbridge, EVENTBUS_ARN)
+
+        self.eventbridge = get_eventbridge()
+        self.messagebus = eventbus.EventBridge(self.eventbridge, EVENTBRIDGE_ARN)
+
         return super().__enter__()
 
     def __exit__(self, *args):
@@ -79,3 +92,6 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def refresh(self, instance, **kwargs):
         self.session.refresh(instance, **kwargs)
+
+    def add_event(self, event: events.Event):
+        self._events.append(event)

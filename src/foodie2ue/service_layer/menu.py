@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 from . import ServiceError
 from ..constants import ORDER_STATUSES
 from ..domain.model import AddOn, MenuItem, Order
+from ..domain.events import OrderUpdatedEvent
 from ..notifications import notify_customer_of_order, notify_drivers_of_new_order
 from ..exceptions import (
     DuplicateItemException,
@@ -140,6 +141,7 @@ def update_order_status(order: Order, status: str,
                         uow: AbstractUnitOfWork) -> Tuple[Optional[Order], Optional[ServiceError]]:
     try:
         uow.repo.update_order_status(order, status=status)
+        uow.add_event(OrderUpdatedEvent(id=order.id, status=order.status))
         return order, None
     except InvalidOrderStateException:
         status_err = f"Must be one of: {(', ').join(ORDER_STATUSES)}"

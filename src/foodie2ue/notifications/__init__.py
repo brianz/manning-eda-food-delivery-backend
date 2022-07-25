@@ -1,9 +1,19 @@
+import os
+
 from flask import render_template
 from flask_mail import Mail, Message
 
 from ..domain import model
 
 mail = None
+
+MAIL_ENABLED = os.environ.get('ENABLE_EMAIL_NOTIFICATIONS', False)
+if not MAIL_ENABLED:
+    print()
+    print('-' * 80)
+    print('WARNING: email sending is *DISABLED*')
+    print('You will not receive any email until the env var ENABLE_EMAIL_NOTIFICATIONS=1')
+    print('-' * 80)
 
 
 def setup_mail(app):
@@ -29,7 +39,8 @@ def notify_customer_of_order(recipient, first_name, order_id, order_total) -> No
         html=html_body,
         body=text_body,
     )
-    mail.send(msg)
+    if MAIL_ENABLED:
+        mail.send(msg)
 
 
 def notify_drivers_of_new_order(order: model.Order) -> None:
