@@ -74,10 +74,17 @@ file, things won't work, such as publishing to EventBridge.
 
 ## Notes
 
-- All of the code worth looking at is in the `foodie2ue` directory
-- The API routes are defined in `foodie2ue/api/routes.py`. You can see the API routes and how they
-  map to code at the very bottom of that file in a function called `connect_routes`.
-- This code would be much simpler without these patterns in place. However, simpler code would be
-  harder to extract later.
-- There are no tests yet, mostly b/c all this is doing is creating and reading data. Add business
+- All of the code worth looking at is in the `src/foodie2ue` directory
+- The API routes are defined in `src/foodie2ue/api/routes.py`. You can see the API routes and how they
+  map to code in a function called `connect_routes`. All the `api` code does is HTTP / Flasky
+  things. There isn't any domain logic...this code should be dumb and only know about how to
+  serialize/deserialize data and communicate with the service layer.
+- The `service_layer` is where business logic should live. It uses domain models and a "Unit of
+  Work" to actually do stuff, like read/write from/to the database.
+- Domain models encapsulate our business objects. They are not dependent on any particular database
+  engine.
+- The `admin.py` file is what handles inserting test data. It's pretty dumb.
+- The application code would be much easier to read without these patterns in place. However, simpler
+  code would be harder to extract later.
+- There are no tests yet, mostly b/c all this is doing is creating and reading data. As business
   logic arrives, we can add tests.
