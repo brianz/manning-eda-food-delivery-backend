@@ -175,6 +175,7 @@ class OrderSchema(BaseSchema):
     )
     tax = fields.Number(as_string=True)
     delivery_fee = fields.Number(as_string=True)
+    status = fields.Str(dump_only=True)
     subtotal = fields.Number(as_string=True)
     total = fields.Number(as_string=True, dump_only=True)
 
