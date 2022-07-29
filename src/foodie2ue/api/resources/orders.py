@@ -5,7 +5,7 @@ from marshmallow import ValidationError
 from . import BaseAPIResource
 
 from ...domain import model
-from ...service_layer import menu as menu_service
+from ...service_layer import menu as order_service
 from ...service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -30,7 +30,7 @@ class OrdersCreate(BaseAPIResource):
             except ValidationError as error:
                 abort(400, message="Invalid order payload", details=error.messages)
 
-            new_order, error = menu_service.create_new_order(
+            new_order, error = order_service.create_new_order(
                 order=order,
                 uow=uow,
             )
@@ -49,9 +49,9 @@ class OrdersList(BaseAPIResource):
     def get(self, status):
         with self.UOWClass() as uow:
             if status == 'new':
-                items = menu_service.list_new_orders(uow)
+                items = order_service.list_new_orders(uow)
             elif status == 'ready':
-                items = menu_service.list_ready_for_pickup_orders(uow)
+                items = order_service.list_ready_for_pickup_orders(uow)
             else:
                 abort(400, message=f"Invalid status {status}")
 
@@ -102,7 +102,7 @@ class OrderResource(BaseAPIResource):
             except ValidationError as error:
                 abort(400, message="Invalid payload to update order", details=error.messages)
 
-            item, error = menu_service.update_order_status(item, data['status'], uow=uow)
+            item, error = order_service.update_order_status(item, data['status'], uow=uow)
             if error:
                 return {'message': str(error), 'details': error.details}, 400
 

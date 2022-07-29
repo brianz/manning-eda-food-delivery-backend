@@ -80,6 +80,10 @@ class AbstractRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def update_order_status(self, order: model.Order, status: str) -> Optional[model.Order]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def fetch_drivers(self) -> List[model.Driver]:
         raise NotImplementedError
 

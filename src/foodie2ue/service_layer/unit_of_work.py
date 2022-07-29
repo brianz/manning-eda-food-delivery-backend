@@ -51,9 +51,8 @@ class AbstractUnitOfWork(abc.ABC):
     def refresh(self, instance, **kwargs):
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def add_event(self, event: events.Event):
-        raise NotImplementedError
+    def add_event(self, event: events.Event) -> None:
+        self._events.append(event)
 
 
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
@@ -92,6 +91,3 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     def refresh(self, instance, **kwargs):
         self.session.refresh(instance, **kwargs)
-
-    def add_event(self, event: events.Event):
-        self._events.append(event)
