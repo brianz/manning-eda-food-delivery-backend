@@ -61,6 +61,25 @@ root@2beedcf1d752:/code# .... lots of output
 
 Now you have menu items, orders, etc. to play with via the API.
 
+## Resetting the DB
+
+To nuke the database and start from scratch, kill the entire DB container:
+
+```
+$ # stop the running web container if it's running
+$
+$ # Now, remove the DB
+$ make rmdb
+$ #Start back up
+$ make
+root@b9ac6f3f4c66:/code # Now you're in the container!
+root@b9ac6f3f4c66:/code # Go through the same steps as above
+root@b9ac6f3f4c66:/code make migrate
+root@b9ac6f3f4c66:/code make server
+root@b9ac6f3f4c66:/code # in another shell...
+root@b9ac6f3f4c66:/code make data
+```
+
 ## Postman
 
 The API is available on your host machine on port 5150. Use a Postman environment with a `HOST`

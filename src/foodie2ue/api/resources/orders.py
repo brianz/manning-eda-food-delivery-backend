@@ -5,7 +5,7 @@ from marshmallow import ValidationError
 from . import BaseAPIResource
 
 from ...domain import model
-from ...service_layer import menu as order_service
+from ...service_layer import order as order_service
 from ...service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -18,8 +18,7 @@ class OrdersCreate(BaseAPIResource):
         """Create a new Order.
 
         This is the big one which is the result of a user placing a new order on our website or
-        mobile app. Many things need to occur behind the scenes which is wrapped up in the menu
-        service's `create_new_order`.
+        mobile app. Many things need to occur behind the scenes which is wrapped up in the `create_new_order`.
 
         Returns:
             tuple: (dictionary representation of a new order or error, integer http code)
@@ -66,7 +65,7 @@ class OrderResource(BaseAPIResource):
 
     @staticmethod
     def _get_item(item_id: int, uow: AbstractUnitOfWork) -> model.Order:
-        item = menu_service.get_order(item_id, uow=uow)
+        item = order_service.get_order(item_id, uow=uow)
         if not item:
             abort(404, message=f"Order {item_id} doesn't exist", details={})
         return item
