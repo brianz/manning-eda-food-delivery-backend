@@ -8,8 +8,7 @@ from typing import List
 
 from sqlalchemy.exc import IntegrityError
 
-from . import eventbus
-from ..adapters import repository
+from ..adapters import eventbus, repository
 from ..adapters.orm import get_session
 from ..domain import events
 from ..exceptions import DuplicateItemException
