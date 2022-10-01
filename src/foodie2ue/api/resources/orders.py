@@ -18,7 +18,8 @@ class OrdersCreate(BaseAPIResource):
         """Create a new Order.
 
         This is the big one which is the result of a user placing a new order on our website or
-        mobile app. Many things need to occur behind the scenes which is wrapped up in the `create_new_order`.
+        mobile app. Many things need to occur behind the scenes which is wrapped up in the
+        `create_new_order`.
 
         Returns:
             tuple: (dictionary representation of a new order or error, integer http code)
