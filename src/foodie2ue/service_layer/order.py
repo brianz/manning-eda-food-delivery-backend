@@ -3,11 +3,7 @@ from typing import List, Optional, Tuple
 from . import ServiceError
 from ..constants import ORDER_STATUSES
 from ..domain.model import AddOn, MenuItem, Order
-from ..domain.events import OrderUpdatedEvent
-from ..notifications import (
-    notify_customer_of_order,
-    notify_drivers_of_new_order,
-)
+from ..domain.events import OrderCreatedEvent, OrderUpdatedEvent
 from ..exceptions import (
     InvalidOrderStateException,
     MultipleItemsFoundException,
@@ -48,17 +44,16 @@ def create_new_order(order: Order,
                 return (None, ServiceError(msg, details=addon_item))
             order.add_addon_to_order(menu_item)
 
-    # TODO - this is where we'll put in the notifier class
-
     uow.repo.create_order(order)
+    uow.add_event(
+        OrderCreatedEvent(
+            id=order.id,
+            recipient=order.customer_email,
+            first_name=order.customer_first_name,
+            order_id=order.id,
+            order_total=order.total,
+        ))
 
-    notify_customer_of_order(
-        recipient=order.customer_email,
-        first_name=order.customer_first_name,
-        order_id=order.id,
-        order_total=order.total,
-    )
-    notify_drivers_of_new_order(order)
     return (order, None)
 
 

@@ -1,5 +1,5 @@
 import abc
-import json
+import simplejson as json
 
 from typing import Protocol
 # from ..powertools import logger, tracer, metrics
