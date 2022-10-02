@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
 
+@dataclass
 class Event:
+    event_source: str
 
     def asdict(self) -> dict:
         return self.__dict__

@@ -48,8 +48,9 @@ def create_new_order(order: Order,
             order.add_addon_to_order(menu_item)
 
     uow.repo.create_order(order)
-    uow.add_event(
+    uow.broker.add_event(
         OrderCreatedEvent(
+            event_source='OrderService',
             id=order.id,
             recipient=order.customer_email,
             first_name=order.customer_first_name,
@@ -76,8 +77,12 @@ def update_order_status(order: Order, status: str,
                         uow: AbstractUnitOfWork) -> Tuple[Optional[Order], Optional[ServiceError]]:
     try:
         uow.repo.update_order_status(order, status=status)
-        # Perhaps change this to uow.broker.add_event?
-        uow.add_event(OrderUpdatedEvent(id=order.id, status=order.status))
+        uow.broker.add_event(
+            OrderUpdatedEvent(
+                event_source='OrderService',
+                id=order.id,
+                status=order.status,
+            ))
         return order, None
     except InvalidOrderStateException:
         status_err = f"Must be one of: {(', ').join(ORDER_STATUSES)}"
