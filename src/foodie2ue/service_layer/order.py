@@ -3,7 +3,10 @@ from typing import List, Optional, Tuple
 from . import ServiceError
 from ..constants import ORDER_STATUSES
 from ..domain.model import AddOn, MenuItem, Order
-from ..domain.events import OrderCreatedEvent, OrderUpdatedEvent
+from ..domain.events import (
+    OrderCreatedEvent,
+    OrderUpdatedEvent,
+)
 from ..exceptions import (
     InvalidOrderStateException,
     MultipleItemsFoundException,
@@ -73,6 +76,7 @@ def update_order_status(order: Order, status: str,
                         uow: AbstractUnitOfWork) -> Tuple[Optional[Order], Optional[ServiceError]]:
     try:
         uow.repo.update_order_status(order, status=status)
+        # Perhaps change this to uow.broker.add_event?
         uow.add_event(OrderUpdatedEvent(id=order.id, status=order.status))
         return order, None
     except InvalidOrderStateException:

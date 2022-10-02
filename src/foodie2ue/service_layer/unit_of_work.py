@@ -32,6 +32,8 @@ class AbstractUnitOfWork(abc.ABC):
         return self
 
     def __exit__(self, *args):
+        import pdb
+        pdb.set_trace()
         for event in self._events:
             self.messagebus.publish_event(
                 event_type=event.__class__.__name__,
